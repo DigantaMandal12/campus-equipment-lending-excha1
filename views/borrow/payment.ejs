@@ -1,0 +1,383 @@
+<%- include('../partials/header') %>
+
+<div style="max-width: 960px; margin: 1.5rem auto;">
+  <!-- Breadcrumb Navigation -->
+  <div style="margin-bottom: 1.25rem;">
+    <a href="/borrow/requests" class="btn btn-secondary btn-sm">&larr; Back to Borrow Requests</a>
+  </div>
+
+  <!-- Gateway Security Banner -->
+  <div style="background: var(--primary); color: #ffffff; padding: 1.25rem 1.5rem; border-radius: var(--radius-card); margin-bottom: 1.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; box-shadow: var(--shadow-sm);">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+        🛡️
+      </div>
+      <div>
+        <h1 style="font-size: 1.35rem; font-weight: 700; margin: 0; color: #ffffff;">Campus UPI Payment Gateway</h1>
+        <p style="font-size: 0.85rem; margin: 0; color: #e0f2fe;">NPCI Unified Payments Interface &bull; Zero Platform Fee Escrow</p>
+      </div>
+    </div>
+    <div style="text-align: right;">
+      <span style="display: inline-block; background: rgba(255,255,255,0.2); padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.5px;">
+        🔒 256-Bit SSL Encrypted
+      </span>
+    </div>
+  </div>
+
+  <!-- Two-Column Gateway Layout -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; align-items: start;">
+    
+    <!-- Left Column: Payment Options & QR Code -->
+    <div class="card" style="box-shadow: var(--shadow-md);">
+      <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--dark); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+        <span>Select UPI Payment Mode</span>
+        <span id="expiryTimer" style="font-size: 0.8rem; color: #dc2626; font-weight: 600; background: #fee2e2; padding: 0.2rem 0.55rem; border-radius: 12px;">
+          ⏱ 04:59
+        </span>
+      </h2>
+
+      <!-- Mode Selector Tabs -->
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+        <button type="button" id="tabQrBtn" class="btn btn-sm btn-primary upi-tab-btn" onclick="switchUpiTab('qr')">
+          📱 Scan QR Code
+        </button>
+        <button type="button" id="tabAppBtn" class="btn btn-sm btn-secondary upi-tab-btn" onclick="switchUpiTab('app')">
+          ⚡ UPI Apps / Intent
+        </button>
+        <button type="button" id="tabVpaBtn" class="btn btn-sm btn-secondary upi-tab-btn" onclick="switchUpiTab('vpa')">
+          🆔 Pay by UPI ID
+        </button>
+      </div>
+
+      <!-- Tab 1: QR Code Mode -->
+      <div id="upiTabQr" class="upi-tab-pane">
+        <div style="text-align: center; background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem 1rem; margin-bottom: 1.25rem;">
+          <div style="background: #ffffff; padding: 0.75rem; border-radius: 12px; display: inline-block; box-shadow: var(--shadow-sm); border: 1px solid #cbd5e1;">
+            <div style="width: 210px; height: 210px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+              <%- qrSvg %>
+            </div>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <span style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Payee UPI VPA</span>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.25rem;">
+              <code id="payeeVpaText" style="font-size: 0.95rem; font-weight: 700; color: var(--primary); background: #e0f2fe; padding: 0.25rem 0.6rem; border-radius: 4px;">
+                <%= payeeVpa %>
+              </code>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="copyPayeeVpa()" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+                📋 Copy
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+            Scan with any UPI App: <strong style="color: var(--dark);">GPay, PhonePe, Paytm, BHIM, CRED</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Instant Apps / Intent Mode -->
+      <div id="upiTabApp" class="upi-tab-pane" style="display: none;">
+        <div style="padding: 1rem 0; margin-bottom: 1.25rem;">
+          <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Choose your preferred UPI application or launch intent directly on mobile:
+          </p>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
+            <a href="<%= upiUri %>" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 0.5rem; font-weight: 600; border-color: #cbd5e1;">
+              <span style="font-size: 1.2rem;">🟢</span> Google Pay
+            </a>
+            <a href="<%= upiUri %>" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 0.5rem; font-weight: 600; border-color: #cbd5e1;">
+              <span style="font-size: 1.2rem;">🟣</span> PhonePe
+            </a>
+            <a href="<%= upiUri %>" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 0.5rem; font-weight: 600; border-color: #cbd5e1;">
+              <span style="font-size: 1.2rem;">🔵</span> Paytm
+            </a>
+            <a href="<%= upiUri %>" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 0.5rem; font-weight: 600; border-color: #cbd5e1;">
+              <span style="font-size: 1.2rem;">🇮🇳</span> BHIM UPI
+            </a>
+          </div>
+
+          <a href="<%= upiUri %>" class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.85rem;">
+            <span>🚀</span> Open Default UPI App (Intent)
+          </a>
+        </div>
+      </div>
+
+      <!-- Tab 3: Collect Request by VPA -->
+      <div id="upiTabVpa" class="upi-tab-pane" style="display: none;">
+        <div style="padding: 1rem 0; margin-bottom: 1.25rem;">
+          <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            Enter your UPI VPA to receive an instant collect request on your banking app:
+          </p>
+
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <input 
+              type="text" 
+              id="vpaCollectInput" 
+              class="form-control" 
+              placeholder="e.g. mobile@paytm or student@okhdfcbank" 
+              value="<%= borrower.upiId || '' %>"
+              style="font-family: monospace;"
+            >
+            <button type="button" class="btn btn-primary btn-sm" onclick="sendCollectRequest()">
+              Request
+            </button>
+          </div>
+
+          <div id="collectStatus" style="display: none; padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; margin-top: 0.5rem;"></div>
+        </div>
+      </div>
+
+      <!-- Step 2: Verification & UTR Submission Form -->
+      <div style="border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--dark); margin: 0;">
+            Confirm Payment via 12-Digit UTR
+          </h3>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="autoFillDemoPayment()" style="font-size: 0.75rem; padding: 0.2rem 0.55rem; color: var(--secondary); border-color: #bae6fd; background: #f0f9ff;">
+            ⚡ Auto-Fill Demo UTR
+          </button>
+        </div>
+
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          After completing the UPI payment in your app, provide the 12-digit UPI Reference No. (UTR) found on your app's transaction receipt.
+        </p>
+
+        <form action="/borrow/payment/<%= request._id %>" method="POST" id="upiPaymentForm">
+          <input type="hidden" name="requestId" value="<%= request._id %>">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="paymentApp" class="form-label">Payment App Used</label>
+              <select id="paymentApp" name="paymentApp" class="form-select">
+                <option value="Google Pay">Google Pay (GPay)</option>
+                <option value="PhonePe">PhonePe</option>
+                <option value="Paytm">Paytm</option>
+                <option value="BHIM UPI">BHIM UPI</option>
+                <option value="CRED">CRED</option>
+                <option value="Amazon Pay">Amazon Pay</option>
+                <option value="Bank UPI">NetBanking / Other UPI</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="payerUpiId" class="form-label">Your UPI ID / Mobile</label>
+              <input 
+                type="text" 
+                id="payerUpiId" 
+                name="upiId" 
+                class="form-control" 
+                placeholder="e.g. yourname@okhdfcbank" 
+                value="<%= borrower.upiId || '' %>"
+                required
+              >
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="transactionId" class="form-label" style="display: flex; justify-content: space-between;">
+              <span>12-Digit UPI Transaction ID / UTR *</span>
+              <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: normal;">From payment confirmation</span>
+            </label>
+            <input 
+              type="text" 
+              id="transactionId" 
+              name="transactionId" 
+              class="form-control" 
+              placeholder="e.g. 428190283719" 
+              minlength="6"
+              maxlength="20"
+              style="letter-spacing: 2px; font-family: monospace; font-size: 1.05rem; font-weight: 700; text-transform: uppercase;"
+              required
+            >
+          </div>
+
+          <div style="margin-top: 1.25rem;">
+            <button type="submit" class="btn btn-primary btn-lg" data-loading-text="Verifying UPI Payment..." style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+              <span>✓</span> Authorize & Confirm Deposit (₹<%= amount %>)
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Order & Escrow Details -->
+    <div>
+      <div class="card" style="box-shadow: var(--shadow-md); margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--dark); margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+          Equipment & Pickup Order Summary
+        </h2>
+
+        <!-- Equipment Card -->
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.25rem;">
+          <div style="width: 70px; height: 70px; border-radius: var(--radius-sm); overflow: hidden; background: #f1f5f9; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+            <% if (equipment && equipment.imageUrl) { %>
+              <img src="<%= equipment.imageUrl %>" alt="<%= equipment.title %>" style="width: 100%; height: 100%; object-fit: cover;">
+            <% } else { %>
+              <span style="font-size: 2rem;">🔬</span>
+            <% } %>
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--secondary); font-weight: 700;">
+              <%= equipment ? equipment.category : 'General' %>
+            </div>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--dark); margin: 0.15rem 0; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+              <%= equipment ? equipment.title : 'Academic Item' %>
+            </h3>
+            <div style="font-size: 0.82rem; color: var(--text-muted);">
+              Condition: <strong><%= equipment ? equipment.condition : 'Good' %></strong> &bull; <%= equipment ? equipment.department : 'Campus' %>
+            </div>
+          </div>
+        </div>
+
+        <!-- College Pickup & Handover Details -->
+        <div style="background: #f8fafc; border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.88rem; border: 1px solid var(--border);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <span style="color: var(--text-muted);">Order Number:</span>
+            <strong style="color: var(--primary);">#<%= request.orderNumber || 'ORD-' + request._id.toString().slice(-6).toUpperCase() %></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <span style="color: var(--text-muted);">Seller / Lender:</span>
+            <strong><%= lender ? lender.name : 'Campus Peer' %></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <span style="color: var(--text-muted);">📍 Pickup Location:</span>
+            <strong style="text-align: right; max-width: 170px;"><%= request.pickupLocation || 'Electrical Lab - Room 304' %></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <span style="color: var(--text-muted);">📅 Pickup Date:</span>
+            <strong><%= new Date(request.pickupDate || request.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) %></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">⏰ Pickup Time:</span>
+            <strong style="color: var(--primary);"><%= request.pickupTime || '2:00 PM – 2:30 PM' %></strong>
+          </div>
+        </div>
+
+        <!-- Pricing & Deposit Breakdown -->
+        <div style="border-top: 1px solid var(--border); padding-top: 0.85rem; font-size: 0.9rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <span style="color: var(--text-muted);">Refundable Security Deposit:</span>
+            <strong>₹<%= amount %></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <span style="color: var(--text-muted);">Convenience & UPI Fee:</span>
+            <span style="color: var(--success); font-weight: 600;">₹0 (Free)</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <span style="color: var(--text-muted);">Transaction Ref:</span>
+            <code style="font-size: 0.8rem; color: var(--dark); font-weight: 700;"><%= transactionRef %></code>
+          </div>
+          
+          <div style="border-top: 2px dashed #cbd5e1; margin: 0.85rem 0; padding-top: 0.85rem; display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 700; color: var(--dark);">
+            <span>Total Payable:</span>
+            <span style="color: var(--primary);">₹<%= amount %></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campus Escrow Trust Box -->
+      <div class="card" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+        <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+          <div style="font-size: 1.5rem; line-height: 1;">🛡️</div>
+          <div style="font-size: 0.84rem; color: #166534; line-height: 1.45;">
+            <strong>100% Refundable Campus Escrow:</strong>
+            <p style="margin: 0.25rem 0 0 0;">
+              Your deposit is safely held in campus escrow. Once the equipment is returned and inspected by <%= lender ? lender.name : 'the lender' %>, the deposit is automatically refunded back to your UPI account.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Tab Switcher for UPI Gateway
+  function switchUpiTab(tab) {
+    document.querySelectorAll('.upi-tab-pane').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.upi-tab-btn').forEach(btn => {
+      btn.classList.remove('btn-primary');
+      btn.classList.add('btn-secondary');
+    });
+
+    if (tab === 'qr') {
+      document.getElementById('upiTabQr').style.display = 'block';
+      document.getElementById('tabQrBtn').classList.add('btn-primary');
+      document.getElementById('tabQrBtn').classList.remove('btn-secondary');
+    } else if (tab === 'app') {
+      document.getElementById('upiTabApp').style.display = 'block';
+      document.getElementById('tabAppBtn').classList.add('btn-primary');
+      document.getElementById('tabAppBtn').classList.remove('btn-secondary');
+    } else if (tab === 'vpa') {
+      document.getElementById('upiTabVpa').style.display = 'block';
+      document.getElementById('tabVpaBtn').classList.add('btn-primary');
+      document.getElementById('tabVpaBtn').classList.remove('btn-secondary');
+    }
+  }
+
+  // Copy VPA to clipboard
+  function copyPayeeVpa() {
+    const vpaText = document.getElementById('payeeVpaText').innerText.trim();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(vpaText).then(() => {
+        alert('Payee UPI ID copied to clipboard: ' + vpaText);
+      });
+    } else {
+      prompt('Copy Payee UPI ID:', vpaText);
+    }
+  }
+
+  // Simulation of VPA collect request
+  function sendCollectRequest() {
+    const input = document.getElementById('vpaCollectInput').value.trim();
+    const statusBox = document.getElementById('collectStatus');
+    if (!input || !input.includes('@')) {
+      statusBox.style.display = 'block';
+      statusBox.style.background = '#fee2e2';
+      statusBox.style.color = '#dc2626';
+      statusBox.innerText = 'Please enter a valid UPI Virtual Payment Address (e.g. name@bank)';
+      return;
+    }
+
+    statusBox.style.display = 'block';
+    statusBox.style.background = '#dcfce7';
+    statusBox.style.color = '#15803d';
+    statusBox.innerHTML = '🔔 Collect request of <strong>₹<%= amount %></strong> sent to <strong>' + input + '</strong>! Please open your UPI app to approve, then enter the UTR below.';
+    
+    // Auto populate payer UPI in step 2
+    document.getElementById('payerUpiId').value = input;
+  }
+
+  // Auto-fill demo transaction details for quick testing
+  function autoFillDemoPayment() {
+    const randomUtr = Math.floor(100000000000 + Math.random() * 900000000000);
+    document.getElementById('transactionId').value = randomUtr.toString();
+    const payerField = document.getElementById('payerUpiId');
+    if (!payerField.value) {
+      payerField.value = 'student' + Math.floor(100 + Math.random() * 900) + '@oksbi';
+    }
+    const appSelect = document.getElementById('paymentApp');
+    appSelect.selectedIndex = Math.floor(Math.random() * 4);
+  }
+
+  // Expiration countdown clock (5 minutes)
+  let timeLeft = 300;
+  const timerElem = document.getElementById('expiryTimer');
+  const countdownInterval = setInterval(() => {
+    timeLeft--;
+    if (timeLeft <= 0) {
+      clearInterval(countdownInterval);
+      timerElem.innerText = 'Expired - Refresh';
+      return;
+    }
+    const mins = Math.floor(timeLeft / 60);
+    const secs = timeLeft % 60;
+    timerElem.innerText = '⏱ ' + (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+  }, 1000);
+</script>
+
+<%- include('../partials/footer') %>

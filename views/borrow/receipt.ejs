@@ -1,0 +1,288 @@
+<%- include('../partials/header') %>
+
+<% 
+  const formattedPickupDate = new Date(request.pickupDate || request.startDate).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+  const isOrderCompleted = request.status === 'COMPLETED' || request.handoverStatus === 'COMPLETED';
+  const isReadyForPickup = request.handoverStatus === 'READY_FOR_PICKUP';
+  const isPreparing = request.handoverStatus === 'PREPARING';
+%>
+
+<div style="max-width: 720px; margin: 2rem auto;">
+  <div style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+    <a href="/borrow/requests" class="btn btn-secondary btn-sm">&larr; Back to Requests & Orders</a>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">
+      🖨️ Print / Save Pass
+    </button>
+  </div>
+
+  <!-- Main Card -->
+  <div class="card" style="box-shadow: var(--shadow-lg); padding: 2rem; border-top: 5px solid <%= isOrderCompleted ? 'var(--secondary)' : (isReadyForPickup ? 'var(--success)' : 'var(--primary)') %>;">
+
+    <!-- 19. Buyer Final Status: Completed Order View -->
+    <% if (isOrderCompleted) { %>
+      <div style="text-align: center; margin-bottom: 2rem; background: #f0fdf4; border: 2px solid #86efac; border-radius: var(--radius-md); padding: 1.5rem;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: #dcfce7; color: #16a34a; font-size: 2.2rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem auto;">
+          🎉
+        </div>
+        <h1 style="font-size: 1.6rem; font-weight: 800; color: #166534; margin: 0 0 0.5rem 0;">
+          ORDER COMPLETED
+        </h1>
+        <div style="font-size: 0.95rem; color: #1e293b; max-width: 480px; margin: 0 auto 1.25rem auto;">
+          Product: <strong><%= equipment ? equipment.title : 'Equipment' %></strong><br>
+          Order: <strong>#<%= request.orderNumber || 'ORD-10245' %></strong> &bull; Payment: <strong style="color: var(--success);">✅ PAID</strong><br>
+          Pickup: <strong style="color: var(--success);">✅ COMPLETED</strong> &bull; Date: <strong><%= formattedPickupDate %></strong><br>
+          Location: <strong><%= request.pickupLocation %></strong>
+        </div>
+
+        <div style="border-top: 1px dashed #86efac; padding-top: 1rem; margin-top: 0.75rem;">
+          <h3 style="font-size: 1rem; font-weight: 700; color: #166534; margin-bottom: 0.5rem;">
+            ⭐ Rate your experience
+          </h3>
+          <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0.75rem;">
+            Help fellow campus members by rating equipment condition and handover punctuality.
+          </p>
+          <a href="/equipment/<%= equipment ? equipment._id : '#' %>" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+            <span>⭐⭐⭐⭐⭐</span> Write Review
+          </a>
+        </div>
+      </div>
+
+    <!-- Ready for Pickup View -->
+    <% } else if (isReadyForPickup) { %>
+      <div style="text-align: center; margin-bottom: 1.75rem;">
+        <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: #dcfce7; color: #15803d; border: 1.5px solid #86efac; padding: 0.4rem 1rem; border-radius: 20px; font-weight: 800; font-size: 0.9rem; margin-bottom: 0.75rem;">
+          <span style="font-size: 1rem;">🟢</span> READY FOR PICKUP
+        </div>
+        <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--dark); margin: 0;">
+          ORDER #<%= request.orderNumber || 'ORD-10245' %>
+        </h1>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">
+          Product: <strong><%= equipment ? equipment.title : 'Equipment' %></strong>
+        </p>
+      </div>
+
+    <!-- Preparing / Confirmed View -->
+    <% } else { %>
+      <div style="text-align: center; margin-bottom: 1.75rem;">
+        <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; padding: 0.4rem 1rem; border-radius: 20px; font-weight: 800; font-size: 0.9rem; margin-bottom: 0.75rem;">
+          <span>📦</span> <%= isPreparing ? 'SELLER PREPARING' : 'ORDER CONFIRMED' %>
+        </div>
+        <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--dark); margin: 0;">
+          ORDER #<%= request.orderNumber || 'ORD-10245' %>
+        </h1>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">
+          Product: <strong><%= equipment ? equipment.title : 'Equipment' %></strong> &bull; Payment: <strong style="color: var(--success);">✅ PAID</strong>
+        </p>
+      </div>
+    <% } %>
+
+    <!-- 20. Order Timeline Component -->
+    <div style="margin-bottom: 2rem; background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem 1rem;">
+      <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 0.5px; margin-bottom: 1rem; text-align: center;">
+        ORDER LIFECYCLE TIMELINE
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; font-size: 0.82rem;">
+        <div style="padding: 0.5rem; border-radius: var(--radius-sm); background: #dcfce7; color: #166534; font-weight: 600; text-align: center; border: 1px solid #bbf7d0;">
+          🛒 Order Created<br><span style="font-size: 0.7rem; color: #15803d;">✓ Done</span>
+        </div>
+        <div style="padding: 0.5rem; border-radius: var(--radius-sm); background: #dcfce7; color: #166534; font-weight: 600; text-align: center; border: 1px solid #bbf7d0;">
+          💳 Payment Verified<br><span style="font-size: 0.7rem; color: #15803d;">✓ Paid (UPI)</span>
+        </div>
+        <div style="padding: 0.5rem; border-radius: var(--radius-sm); background: #dcfce7; color: #166534; font-weight: 600; text-align: center; border: 1px solid #bbf7d0;">
+          🔔 Seller Notified<br><span style="font-size: 0.7rem; color: #15803d;">✓ Sent</span>
+        </div>
+        <div style="padding: 0.5rem; border-radius: var(--radius-sm); background: <%= (isPreparing || isReadyForPickup || isOrderCompleted) ? '#dcfce7' : '#ffffff' %>; color: <%= (isPreparing || isReadyForPickup || isOrderCompleted) ? '#166534' : 'var(--text-muted)' %>; font-weight: 600; text-align: center; border: 1px solid <%= (isPreparing || isReadyForPickup || isOrderCompleted) ? '#bbf7d0' : 'var(--border)' %>;">
+          📦 Seller Preparing<br><span style="font-size: 0.7rem;"><%= (isPreparing || isReadyForPickup || isOrderCompleted) ? '✓ Completed' : 'Pending' %></span>
+        </div>
+        <div style="padding: 0.5rem; border-radius: var(--radius-sm); background: <%= (isReadyForPickup || isOrderCompleted) ? '#dcfce7' : '#ffffff' %>; color: <%= (isReadyForPickup || isOrderCompleted) ? '#166534' : 'var(--text-muted)' %>; font-weight: 600; text-align: center; border: 1px solid <%= (isReadyForPickup || isOrderCompleted) ? '#bbf7d0' : 'var(--border)' %>;">
+          🟢 Ready for Pickup<br><span style="font-size: 0.7rem;"><%= (isReadyForPickup || isOrderCompleted) ? '✓ Ready' : 'In Queue' %></span>
+        </div>
+        <div style="padding: 0.5rem; border-radius: var(--radius-sm); background: <%= isOrderCompleted ? '#dcfce7' : '#ffffff' %>; color: <%= isOrderCompleted ? '#166534' : 'var(--text-muted)' %>; font-weight: 600; text-align: center; border: 1px solid <%= isOrderCompleted ? '#bbf7d0' : 'var(--border)' %>;">
+          🤝 Handover & Complete<br><span style="font-size: 0.7rem;"><%= isOrderCompleted ? '✓ Completed' : 'At Pickup' %></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 16 & 17. Date & Location Protection Alerts -->
+    <% if (!isToday && !isOrderCompleted) { %>
+      <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 1.5rem; color: #92400e; font-size: 0.88rem; display: flex; gap: 0.75rem; align-items: center;">
+        <span style="font-size: 1.4rem;">⚠️</span>
+        <div>
+          <strong>PICKUP NOT SCHEDULED FOR TODAY:</strong><br>
+          Your order is scheduled for <strong>📅 <%= formattedPickupDate %></strong> (⏰ <%= request.pickupTime %>). Please visit the counter during your scheduled pickup time.
+        </div>
+      </div>
+    <% } %>
+
+    <!-- 14. PICKUP DAY & LOCATION PASS -->
+    <div style="background: #f8fafc; border: 2px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.75rem;">
+      <h2 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); text-transform: uppercase; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+        <span>🏫</span> PICKUP & HANDOVER PASS
+      </h2>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; font-size: 0.92rem; margin-bottom: 1.25rem;">
+        <div>
+          <div style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; font-weight: 700;">📍 Pickup Location</div>
+          <div style="font-weight: 700; color: var(--dark); font-size: 1.05rem; margin-top: 0.2rem;">
+            <%= request.pickupLocation || 'Electrical Lab - Room 304 (Engineering Building)' %>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem;">
+            Handover point inside campus
+          </div>
+        </div>
+
+        <div>
+          <div style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; font-weight: 700;">📅 Date & Time</div>
+          <div style="font-weight: 700; color: var(--dark); font-size: 1.05rem; margin-top: 0.2rem;">
+            <%= formattedPickupDate %>
+          </div>
+          <div style="font-weight: 600; color: var(--secondary); font-size: 0.95rem;">
+            ⏰ <%= request.pickupTime || '2:00 PM – 2:30 PM' %>
+          </div>
+        </div>
+
+        <div>
+          <div style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; font-weight: 700;">👤 Handover Contact</div>
+          <div style="font-weight: 700; color: var(--dark); margin-top: 0.2rem;">
+            <%= lender ? lender.name : 'Rahul Das' %> (Seller)
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">
+            <%= lender ? lender.department : 'General' %> &bull; <%= lender ? (lender.phone || lender.email) : '' %>
+          </div>
+        </div>
+
+        <div>
+          <div style="color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; font-weight: 700;">👤 Buyer / Student</div>
+          <div style="font-weight: 700; color: var(--dark); margin-top: 0.2rem;">
+            <%= borrower ? borrower.name : 'Student' %>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">
+            <%= borrower ? borrower.department : '' %> <%= borrower && borrower.studentId ? '(ID: ' + borrower.studentId + ')' : '' %>
+          </div>
+        </div>
+      </div>
+
+      <!-- 15. QR / Order Verification Box -->
+      <div style="border-top: 1px dashed var(--border); padding-top: 1.25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+        <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
+          🔐 ORDER VERIFICATION & IDENTIFICATION
+        </div>
+
+        <div style="background: #ffffff; padding: 0.75rem; border-radius: 12px; border: 1px solid #cbd5e1; box-shadow: var(--shadow-sm); margin-bottom: 0.75rem;">
+          <div style="width: 170px; height: 170px; display: flex; align-items: center; justify-content: center;">
+            <%- orderQrSvg %>
+          </div>
+        </div>
+
+        <div style="font-size: 0.95rem; font-family: monospace; font-weight: 700; color: var(--primary); margin-bottom: 0.35rem;">
+          Order ID: #<%= request.orderNumber || 'ORD-10245' %> &bull; Passcode: <%= request.verificationCode || 'A4B29F' %>
+        </div>
+
+        <div style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem;">
+          <span>🪪</span> Please bring your College ID card for physical handover verification.
+        </div>
+      </div>
+    </div>
+
+    <!-- Official Payment & Escrow Settlement Table -->
+    <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--dark); margin-bottom: 0.75rem;">
+      Official Payment & Escrow Receipt
+    </h3>
+
+    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.25rem;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.88rem;">
+        <div>
+          <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Receipt Number</span>
+          <div style="font-family: monospace; font-weight: 700; color: var(--dark);"><%= payment.receiptNumber || 'UPI-REC-2026' %></div>
+        </div>
+        <div>
+          <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Payment Timestamp</span>
+          <div style="font-weight: 600; color: var(--dark);"><%= payment.paidAt ? new Date(payment.paidAt).toLocaleString() : new Date().toLocaleString() %></div>
+        </div>
+        <div>
+          <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">UPI UTR / Reference ID</span>
+          <div style="font-family: monospace; font-weight: 700; color: var(--primary);"><%= payment.transactionId || 'UPI-UTR-VERIFIED' %></div>
+        </div>
+        <div>
+          <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Payment Channel</span>
+          <div style="font-weight: 600; color: var(--dark);"><%= payment.paymentApp || 'Google Pay' %> (UPI)</div>
+        </div>
+      </div>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 1.25rem; font-size: 0.9rem;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border); text-align: left;">
+          <th style="padding: 0.5rem 0; color: var(--text-muted);">Item Description</th>
+          <th style="padding: 0.5rem 0; text-align: right; color: var(--text-muted);">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 0.75rem 0;">
+            <strong><%= equipment ? equipment.title : 'Academic Equipment' %></strong>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">
+              Seller: <%= lender ? lender.name : 'Campus Peer' %> &bull; Scheduled: <%= formattedPickupDate %> (<%= request.pickupTime %>)
+            </div>
+          </td>
+          <td style="padding: 0.75rem 0; text-align: right; font-weight: 700;">
+            ₹<%= payment.amount || request.depositAmount %>
+          </td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 0.6rem 0; color: var(--text-muted);">
+            Campus Processing & Escrow Service Fee
+          </td>
+          <td style="padding: 0.6rem 0; text-align: right; color: var(--success); font-weight: 600;">
+            ₹0.00 (Free)
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 0.85rem 0; font-size: 1.05rem; font-weight: 700; color: var(--dark);">
+            Total Paid (INR)
+          </td>
+          <td style="padding: 0.85rem 0; text-align: right; font-size: 1.2rem; font-weight: 700; color: var(--primary);">
+            ₹<%= payment.amount || request.depositAmount %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #166534;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+        <span><strong>Payer VPA / Account:</strong></span>
+        <span><%= payment.upiId || borrower.email %></span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+        <span><strong>Payee Escrow Account:</strong></span>
+        <span><%= payment.payeeUpiId || 'campus.equipment@icici' %></span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span><strong>Escrow Custody:</strong></span>
+        <% if (request.paymentStatus === 'REFUNDED') { %>
+          <strong style="color: var(--secondary);">✓ REFUNDED TO UPI (<%= refund.refundTxnId || 'COMPLETED' %>)</strong>
+        <% } else { %>
+          <strong>🔒 SECURED IN ESCROW (100% Refundable)</strong>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+      <a href="/borrow/requests" class="btn btn-secondary" style="flex: 1; text-align: center;">
+        View All Orders
+      </a>
+      <a href="/equipment" class="btn btn-primary" style="flex: 1; text-align: center;">
+        Browse Marketplace
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

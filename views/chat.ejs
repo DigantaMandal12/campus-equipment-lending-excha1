@@ -1,0 +1,259 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Campus Equipment AI Assistant</h1>
+    <p class="page-subtitle">Powered by OpenRouter API &bull; Live assistance for academic equipment discovery, lab tools, and lending rules</p>
+  </div>
+</div>
+
+<div class="chat-container">
+  <div class="chat-header">
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <span style="font-size: 1.25rem;">🤖</span>
+      <strong><%= assistantName %></strong>
+    </div>
+    
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <button 
+        type="button" 
+        id="openRouterStatusBadge" 
+        onclick="toggleKeySettings()" 
+        style="background: <%= isOpenRouterConfigured ? '#16a34a' : 'rgba(255,255,255,0.25)' %>; color: #ffffff; border: 1px solid rgba(255,255,255,0.4); font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.35rem;"
+      >
+        <span><%= isOpenRouterConfigured ? '⚡ OpenRouter Active' : '⚙️ Connect OpenRouter Key' %></span>
+      </button>
+      <span style="font-size: 0.8rem; background: rgba(255,255,255,0.2); padding: 0.2rem 0.6rem; border-radius: 20px;">
+        Online
+      </span>
+    </div>
+  </div>
+
+  <!-- OpenRouter API Key Configuration Drawer -->
+  <div id="keySettingsDrawer" style="display: none; background: #f0fdf4; border-bottom: 2px solid #86efac; padding: 1rem 1.25rem; font-size: 0.88rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+      <strong style="color: #166534; font-size: 0.95rem;">🔑 OpenRouter AI Configuration</strong>
+      <button type="button" onclick="toggleKeySettings()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #166534;">&times;</button>
+    </div>
+    <p style="color: #334155; font-size: 0.82rem; margin-bottom: 0.75rem;">
+      Paste your OpenRouter API key below or configure it in <code>.env</code> as <code>OPENROUTER_API_KEY</code>.
+    </p>
+
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <input 
+        type="password" 
+        id="apiKeyInput" 
+        class="form-control" 
+        placeholder="Paste your sk-or-v1-... key" 
+        style="flex: 2; min-width: 220px; font-family: monospace; font-size: 0.85rem;"
+      >
+      <select id="modelSelect" class="form-select" style="flex: 1; min-width: 170px; font-size: 0.85rem;">
+        <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Free)</option>
+        <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (Free)</option>
+        <option value="deepseek/deepseek-r1:free">DeepSeek R1 (Free)</option>
+      </select>
+      <button type="button" class="btn btn-success btn-sm" onclick="saveApiKey()">
+        Activate AI Key
+      </button>
+    </div>
+    <div id="keySaveMsg" style="font-size: 0.8rem; margin-top: 0.5rem; display: none;"></div>
+  </div>
+
+  <div id="chatMessages" class="chat-messages">
+    <div class="chat-bubble bot" id="initialBotBubble">
+      <!-- Will be rendered as Markdown on load -->
+    </div>
+  </div>
+
+  <div id="chatSuggestions" class="chat-suggestions">
+    <span class="suggestion-chip" onclick="sendQuickPrompt(this.innerText)">Find a Mini Drafter</span>
+    <span class="suggestion-chip" onclick="sendQuickPrompt(this.innerText)">BEE Lab Equipment</span>
+    <span class="suggestion-chip" onclick="sendQuickPrompt(this.innerText)">Calculators for Exams</span>
+    <span class="suggestion-chip" onclick="sendQuickPrompt(this.innerText)">How does UPI Escrow work?</span>
+  </div>
+
+  <form id="chatForm" class="chat-input-area" onsubmit="handleChatSubmit(event)">
+    <input 
+      type="text" 
+      id="chatInput" 
+      class="form-control" 
+      placeholder="Ask about equipment, college pickup counters, or course toolkits..." 
+      autocomplete="off" 
+      required
+    >
+    <button type="submit" id="chatSendBtn" class="btn btn-primary">
+      Send
+    </button>
+  </form>
+</div>
+
+<script>
+  const chatMessages = document.getElementById('chatMessages');
+  const chatInput = document.getElementById('chatInput');
+  const chatSendBtn = document.getElementById('chatSendBtn');
+  const chatSuggestions = document.getElementById('chatSuggestions');
+
+  function renderMarkdown(md) {
+    if (!md) return '';
+    let html = md
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Headings
+    html = html.replace(/^### (.*$)/gim, '<h4 class="chat-heading">$1</h4>');
+    html = html.replace(/^## (.*$)/gim, '<h3 class="chat-heading">$1</h3>');
+
+    // Bold & Italic
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
+
+    // Inline Code
+    html = html.replace(/`([^`]+)`/g, '<code class="chat-code">$1</code>');
+
+    // Links: [Label](url)
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="chat-link" target="_self">$1</a>');
+
+    // Lists
+    html = html.replace(/(?:^|\n)[•*-]\s+(.+)/g, '<div class="chat-list-item"><span class="bullet">•</span><span>$1</span></div>');
+    html = html.replace(/(?:^|\n)(\d+)\.\s+(.+)/g, '<div class="chat-list-item"><span class="num">$1.</span><span>$2</span></div>');
+
+    // Spacers and line breaks
+    html = html.replace(/\n\n+/g, '<div class="chat-spacer"></div>');
+    html = html.replace(/\n/g, '<br>');
+
+    return html;
+  }
+
+  // Render initial welcome message
+  document.addEventListener('DOMContentLoaded', () => {
+    const initBubble = document.getElementById('initialBotBubble');
+    if (initBubble) {
+      initBubble.innerHTML = renderMarkdown(
+        "👋 **Hello! I am your AI Campus Equipment Advisor.**\n\n" +
+        "I can help you:\n" +
+        "• 🔍 **Find academic gear** (mini drafters, multimeters, scientific calculators, lab coats)\n" +
+        "• 🎒 **Recommend course toolkits** for Engineering Drawing, BEE, Electronics, or Workshop\n" +
+        "• 📍 **Locate college pickup counters** (Electrical Lab Room 304, Library 2nd Floor, etc.)\n" +
+        "• 🛡️ **Explain UPI security escrow** and how to maintain a 5.0 Trust rating\n\n" +
+        "What would you like to search or ask about today?"
+      );
+    }
+  });
+
+  function toggleKeySettings() {
+    const drawer = document.getElementById('keySettingsDrawer');
+    if (drawer) {
+      drawer.style.display = drawer.style.display === 'none' ? 'block' : 'none';
+    }
+  }
+
+  async function saveApiKey() {
+    const apiKey = document.getElementById('apiKeyInput').value.trim();
+    const model = document.getElementById('modelSelect').value;
+    const msg = document.getElementById('keySaveMsg');
+
+    if (!apiKey) {
+      msg.style.display = 'block';
+      msg.style.color = '#dc2626';
+      msg.textContent = 'Please paste a valid OpenRouter API Key.';
+      return;
+    }
+
+    try {
+      const res = await fetch('/chat/set-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey, model })
+      });
+      const data = await res.json();
+      msg.style.display = 'block';
+      if (data.success) {
+        msg.style.color = '#16a34a';
+        msg.textContent = '✅ ' + data.message;
+        const badge = document.getElementById('openRouterStatusBadge');
+        if (badge) {
+          badge.style.background = '#16a34a';
+          badge.innerHTML = '<span>⚡ OpenRouter Active</span>';
+        }
+        setTimeout(() => {
+          toggleKeySettings();
+        }, 1500);
+      } else {
+        msg.style.color = '#dc2626';
+        msg.textContent = '❌ ' + data.message;
+      }
+    } catch (e) {
+      msg.style.display = 'block';
+      msg.style.color = '#dc2626';
+      msg.textContent = 'Could not save key. Please check network.';
+    }
+  }
+
+  function appendMessage(sender, text) {
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${sender}`;
+
+    if (sender === 'bot') {
+      bubble.innerHTML = renderMarkdown(text);
+    } else {
+      bubble.innerText = text;
+    }
+
+    chatMessages.appendChild(bubble);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function sendQuickPrompt(text) {
+    chatInput.value = text;
+    handleChatSubmit(new Event('submit'));
+  }
+
+  async function handleChatSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const message = chatInput.value.trim();
+    if (!message) return;
+
+    appendMessage('user', message);
+    chatInput.value = '';
+    chatInput.disabled = true;
+    chatSendBtn.disabled = true;
+    chatSendBtn.innerText = 'Thinking...';
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+
+      if (data && data.reply) {
+        appendMessage('bot', data.reply);
+
+        if (data.suggestions && data.suggestions.length > 0) {
+          chatSuggestions.innerHTML = '';
+          data.suggestions.forEach(s => {
+            const chip = document.createElement('span');
+            chip.className = 'suggestion-chip';
+            chip.innerText = s;
+            chip.onclick = () => sendQuickPrompt(s);
+            chatSuggestions.appendChild(chip);
+          });
+        }
+      } else {
+        appendMessage('bot', 'I could not generate an answer right now. Please try again.');
+      }
+    } catch (err) {
+      console.error(err);
+      appendMessage('bot', 'Connection error. Please try again.');
+    } finally {
+      chatInput.disabled = false;
+      chatSendBtn.disabled = false;
+      chatSendBtn.innerText = 'Send';
+      chatInput.focus();
+    }
+  }
+</script>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,364 @@
+<%- include('../partials/header') %>
+
+<div style="max-width: 680px; margin: 1.5rem auto;">
+  <div class="card" style="box-shadow: var(--shadow-md);">
+    <div style="margin-bottom: 1.5rem;">
+      <h1 class="page-title" style="font-size: 1.6rem;">Edit Equipment</h1>
+      <p class="page-subtitle">Update details, photo, and availability for <%= equipment.title %></p>
+    </div>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert-box alert-error">
+        <span><%= error %></span>
+      </div>
+    <% } %>
+
+    <form action="/equipment/<%= equipment._id %>/edit" method="POST" id="editEquipmentForm">
+      <div class="form-group">
+        <label for="title" class="form-label">Equipment Name *</label>
+        <input 
+          type="text" 
+          id="title" 
+          name="title" 
+          class="form-control" 
+          value="<%= equipment.title %>" 
+          required
+        >
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="category" class="form-label">Category *</label>
+          <select id="category" name="category" class="form-select" required>
+            <% categories.forEach(function(cat) { %>
+              <option value="<%= cat %>" <%= equipment.category === cat ? 'selected' : '' %>><%= cat %></option>
+            <% }); %>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="department" class="form-label">Department</label>
+          <select id="department" name="department" class="form-select">
+            <% departments.forEach(function(dept) { %>
+              <option value="<%= dept %>" <%= equipment.department === dept ? 'selected' : '' %>><%= dept %></option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="condition" class="form-label">Condition</label>
+          <select id="condition" name="condition" class="form-select">
+            <option value="Brand New" <%= equipment.condition === 'Brand New' ? 'selected' : '' %>>Brand New</option>
+            <option value="Like New" <%= equipment.condition === 'Like New' ? 'selected' : '' %>>Like New</option>
+            <option value="Good" <%= equipment.condition === 'Good' ? 'selected' : '' %>>Good</option>
+            <option value="Fair" <%= equipment.condition === 'Fair' ? 'selected' : '' %>>Fair</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="status" class="form-label">Availability Status</label>
+          <select id="status" name="status" class="form-select">
+            <option value="AVAILABLE" <%= equipment.status === 'AVAILABLE' ? 'selected' : '' %>>AVAILABLE</option>
+            <option value="UNAVAILABLE" <%= equipment.status === 'UNAVAILABLE' ? 'selected' : '' %>>UNAVAILABLE</option>
+            <option value="BORROWED" <%= equipment.status === 'BORROWED' ? 'selected' : '' %>>BORROWED</option>
+            <option value="DRAFT" <%= equipment.status === 'DRAFT' ? 'selected' : '' %>>DRAFT</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="depositAmount" class="form-label">
+            Security Deposit (₹)
+            <span style="font-size: 0.75rem; color: var(--secondary); font-weight: normal;">(Refundable via UPI)</span>
+          </label>
+          <input 
+            type="number" 
+            id="depositAmount" 
+            name="depositAmount" 
+            class="form-control" 
+            min="0" 
+            step="1" 
+            value="<%= equipment.depositAmount %>"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="location" class="form-label">Pickup Location</label>
+          <input 
+            type="text" 
+            id="location" 
+            name="location" 
+            class="form-control" 
+            value="<%= equipment.location %>"
+          >
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="description" class="form-label">Description & Usage Notes *</label>
+        <textarea 
+          id="description" 
+          name="description" 
+          rows="4" 
+          class="form-control" 
+          required
+        ><%= equipment.description %></textarea>
+      </div>
+
+      <!-- ================================================================
+           DUAL IMAGE SELECTOR: UPLOAD IMAGE OR PASTE URL
+           ================================================================ -->
+      <div class="form-group" style="margin-top: 1.5rem; margin-bottom: 1.5rem; background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <label class="form-label" style="margin: 0; font-weight: 700; color: var(--dark); font-size: 0.95rem;">
+            Equipment Photo (Upload Image or Paste URL)
+          </label>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Change or update current photo</span>
+        </div>
+
+        <!-- Mode Toggle Tabs -->
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+          <button type="button" id="tabUploadBtn" class="btn btn-sm btn-primary img-tab-btn" onclick="switchImageTab('upload')">
+            📁 Upload Image File
+          </button>
+          <button type="button" id="tabUrlBtn" class="btn btn-sm btn-secondary img-tab-btn" onclick="switchImageTab('url')">
+            🔗 Paste Image URL
+          </button>
+        </div>
+
+        <!-- Tab 1: Upload from Device -->
+        <div id="imageTabUpload" class="img-tab-content">
+          <div 
+            id="dropZone" 
+            style="border: 2px dashed #94a3b8; border-radius: var(--radius-sm); padding: 1.75rem 1rem; text-align: center; background: #ffffff; cursor: pointer; transition: all 0.2s ease;"
+            onclick="document.getElementById('equipmentFileInput').click()"
+            ondragover="handleDragOver(event)"
+            ondragleave="handleDragLeave(event)"
+            ondrop="handleFileDrop(event)"
+          >
+            <input 
+              type="file" 
+              id="equipmentFileInput" 
+              accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" 
+              style="display: none;" 
+              onchange="handleFileInputChange(event)"
+            >
+            <div style="font-size: 2.2rem; margin-bottom: 0.35rem;">📸</div>
+            <div style="font-weight: 600; color: var(--dark); font-size: 0.92rem;">
+              Click to select replacement photo or drag & drop here
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem;">
+              PNG, JPG, JPEG, WEBP or GIF (Max 10MB)
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Paste URL -->
+        <div id="imageTabUrl" class="img-tab-content" style="display: none;">
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <input 
+              type="url" 
+              id="pastedUrlField" 
+              class="form-control" 
+              placeholder="https://images.unsplash.com/... or paste image web link"
+              value="<%= equipment.imageUrl && equipment.imageUrl.startsWith('http') ? equipment.imageUrl : '' %>"
+              oninput="handleUrlInputChange(this.value)"
+            >
+            <button type="button" class="btn btn-secondary btn-sm" onclick="previewPastedUrl()">
+              Preview
+            </button>
+          </div>
+
+          <!-- Academic Presets -->
+          <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-top: 0.5rem;">
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Sample Presets:</span>
+            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.15rem 0.45rem;" onclick="applyPreset('https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&auto=format&fit=crop&q=80', 'Compound Microscope')">🔬 Microscope</button>
+            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.15rem 0.45rem;" onclick="applyPreset('https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80', 'Digital Multimeter')">⚡ Multimeter</button>
+            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.15rem 0.45rem;" onclick="applyPreset('https://images.unsplash.com/photo-1587145820266-a5951ee6f620?w=600&auto=format&fit=crop&q=80', 'Graphing Calculator')">📊 Calculator</button>
+            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.15rem 0.45rem;" onclick="applyPreset('https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&auto=format&fit=crop&q=80', 'MacBook Pro Lab Edition')">💻 Laptop</button>
+          </div>
+        </div>
+
+        <!-- Hidden input holding the final URL or data URI -->
+        <input 
+          type="hidden" 
+          id="finalImageUrlInput" 
+          name="imageUrl" 
+          value="<%= equipment.imageUrl || '' %>"
+        >
+
+        <!-- Live Thumbnail Preview Card -->
+        <div id="imagePreviewCard" style="<%= equipment.imageUrl ? 'display: block;' : 'display: none;' %> margin-top: 1rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 0.75rem;">
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <div style="width: 80px; height: 80px; border-radius: 6px; overflow: hidden; background: #f1f5f9; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border);">
+              <img id="previewImgElem" src="<%= equipment.imageUrl || '' %>" alt="Equipment preview" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <span id="previewTypeBadge" style="display: inline-block; font-size: 0.72rem; font-weight: 700; color: var(--secondary); text-transform: uppercase;">
+                <%= equipment.imageUrl ? 'Current Image' : 'Photo Attached' %>
+              </span>
+              <div id="previewFileName" style="font-size: 0.85rem; font-weight: 600; color: var(--dark); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                <%= equipment.imageUrl || 'image.jpg' %>
+              </div>
+              <div id="previewStatusMsg" style="font-size: 0.75rem; color: var(--success); font-weight: 600; margin-top: 0.2rem;">
+                ✓ Attached
+              </div>
+            </div>
+            <div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="clearSelectedImage()" style="color: var(--danger); border-color: #fecaca; background: #fff1f2; font-size: 0.75rem;">
+                ✕ Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="submit" class="btn btn-primary btn-lg" data-loading-text="Saving Changes..." style="flex: 1;">
+          Save Changes
+        </button>
+        <a href="/equipment/<%= equipment._id %>" class="btn btn-secondary btn-lg">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function switchImageTab(mode) {
+    document.querySelectorAll('.img-tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.img-tab-btn').forEach(btn => {
+      btn.classList.remove('btn-primary');
+      btn.classList.add('btn-secondary');
+    });
+
+    if (mode === 'upload') {
+      document.getElementById('imageTabUpload').style.display = 'block';
+      document.getElementById('tabUploadBtn').classList.add('btn-primary');
+      document.getElementById('tabUploadBtn').classList.remove('btn-secondary');
+    } else {
+      document.getElementById('imageTabUrl').style.display = 'block';
+      document.getElementById('tabUrlBtn').classList.add('btn-primary');
+      document.getElementById('tabUrlBtn').classList.remove('btn-secondary');
+    }
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('dropZone').style.borderColor = '#0284c7';
+    document.getElementById('dropZone').style.background = '#f0f9ff';
+  }
+
+  function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('dropZone').style.borderColor = '#94a3b8';
+    document.getElementById('dropZone').style.background = '#ffffff';
+  }
+
+  function handleFileDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    handleDragLeave(e);
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processSelectedFile(e.dataTransfer.files[0]);
+    }
+  }
+
+  function handleFileInputChange(e) {
+    if (e.target.files && e.target.files.length > 0) {
+      processSelectedFile(e.target.files[0]);
+    }
+  }
+
+  function processSelectedFile(file) {
+    if (!file.type.match('image.*')) {
+      alert('Please select an image file (PNG, JPG, WEBP, GIF)');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size exceeds 10MB limit.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      const dataUrl = evt.target.result;
+      showImagePreview(dataUrl, 'Uploaded File: ' + file.name, (file.size / 1024).toFixed(1) + ' KB');
+      document.getElementById('finalImageUrlInput').value = dataUrl;
+
+      const statusElem = document.getElementById('previewStatusMsg');
+      statusElem.innerText = '⏳ Uploading to server...';
+      statusElem.style.color = 'var(--secondary)';
+
+      fetch('/api/upload-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: dataUrl,
+          filename: file.name
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.imageUrl) {
+          document.getElementById('finalImageUrlInput').value = data.imageUrl;
+          statusElem.innerText = '✓ Uploaded & saved to campus repository';
+          statusElem.style.color = 'var(--success)';
+        } else {
+          statusElem.innerText = '✓ Embedded ready to save';
+          statusElem.style.color = 'var(--success)';
+        }
+      })
+      .catch(() => {
+        statusElem.innerText = '✓ Image ready to save';
+        statusElem.style.color = 'var(--success)';
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleUrlInputChange(val) {
+    if (val && val.trim().startsWith('http')) {
+      document.getElementById('finalImageUrlInput').value = val.trim();
+      showImagePreview(val.trim(), 'Web Image Link', 'Remote URL');
+    }
+  }
+
+  function previewPastedUrl() {
+    const val = document.getElementById('pastedUrlField').value.trim();
+    if (!val) {
+      alert('Please paste an image URL first.');
+      return;
+    }
+    handleUrlInputChange(val);
+  }
+
+  function applyPreset(url, name) {
+    document.getElementById('pastedUrlField').value = url;
+    document.getElementById('finalImageUrlInput').value = url;
+    showImagePreview(url, 'Preset: ' + name, 'Sample Image');
+  }
+
+  function showImagePreview(src, title, meta) {
+    const card = document.getElementById('imagePreviewCard');
+    const img = document.getElementById('previewImgElem');
+    img.src = src;
+    document.getElementById('previewTypeBadge').innerText = meta;
+    document.getElementById('previewFileName').innerText = title;
+    card.style.display = 'block';
+  }
+
+  function clearSelectedImage() {
+    document.getElementById('finalImageUrlInput').value = '';
+    document.getElementById('equipmentFileInput').value = '';
+    document.getElementById('pastedUrlField').value = '';
+    document.getElementById('imagePreviewCard').style.display = 'none';
+  }
+</script>
+
+<%- include('../partials/footer') %>

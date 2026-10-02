@@ -1,0 +1,492 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Orders & Borrow Requests</h1>
+    <p class="page-subtitle">Manage campus pickup orders, track preparation status, verify college IDs, and confirm handovers</p>
+  </div>
+  <a href="/equipment" class="btn btn-secondary">Browse Marketplace</a>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 11. SELLER ORDER SECTION (Incoming Orders to Fulfill)                    -->
+<!-- ========================================================================= -->
+<div class="card" style="margin-bottom: 2.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+    <div>
+      <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--dark); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+        <span>📦</span> Seller Orders Management
+      </h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">
+        Fulfill equipment orders from campus peers, manage preparation, and confirm pickup handovers
+      </p>
+    </div>
+  </div>
+
+  <!-- Filter Tabs: New, Confirmed, Preparing, Ready for Pickup, Completed, Cancelled -->
+  <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);">
+    <a href="/borrow/requests?tab=all" class="btn btn-sm <%= activeTab === 'all' ? 'btn-primary' : 'btn-secondary' %>" style="white-space: nowrap;">
+      All (<%= counts.all %>)
+    </a>
+    <a href="/borrow/requests?tab=new" class="btn btn-sm <%= activeTab === 'new' ? 'btn-primary' : 'btn-secondary' %>" style="white-space: nowrap;">
+      New (<%= counts.new %>)
+    </a>
+    <a href="/borrow/requests?tab=confirmed" class="btn btn-sm <%= activeTab === 'confirmed' ? 'btn-primary' : 'btn-secondary' %>" style="white-space: nowrap;">
+      Confirmed
+    </a>
+    <a href="/borrow/requests?tab=preparing" class="btn btn-sm <%= activeTab === 'preparing' ? 'btn-primary' : 'btn-secondary' %>" style="white-space: nowrap;">
+      Preparing (<%= counts.preparing %>)
+    </a>
+    <a href="/borrow/requests?tab=ready" class="btn btn-sm <%= activeTab === 'ready' ? 'btn-primary' : 'btn-secondary' %>" style="white-space: nowrap;">
+      Ready for Pickup (<%= counts.ready %>)
+    </a>
+    <a href="/borrow/requests?tab=completed" class="btn btn-sm <%= activeTab === 'completed' ? 'btn-primary' : 'btn-secondary' %>" style="white-space: nowrap;">
+      Completed (<%= counts.completed %>)
+    </a>
+    <a href="/borrow/requests?tab=cancelled" class="btn btn-sm <%= activeTab === 'cancelled' ? 'btn-primary' : 'btn-secondary' %>" style="white-space: nowrap;">
+      Cancelled (<%= counts.cancelled %>)
+    </a>
+  </div>
+
+  <% if (incomingRequests.length > 0) { %>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Order & Product</th>
+            <th>Buyer</th>
+            <th>Payment Status</th>
+            <th>Pickup Location</th>
+            <th>Pickup Date & Time</th>
+            <th>Order Status</th>
+            <th>Seller Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% incomingRequests.forEach(function(item) { %>
+            <% 
+              const formattedDate = new Date(item.pickupDate || item.startDate).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+              });
+              const itemDateStr = item.pickupDate ? new Date(item.pickupDate).toISOString().split('T')[0] : '';
+              const isDateMatch = itemDateStr === todayDateString;
+            %>
+            <tr>
+              <!-- Product & Order # -->
+              <td>
+                <div style="font-family: monospace; font-size: 0.8rem; font-weight: 700; color: var(--primary);">
+                  #<%= item.orderNumber || 'ORD-' + item._id.toString().slice(-5).toUpperCase() %>
+                </div>
+                <strong>
+                  <a href="/equipment/<%= item.equipment ? item.equipment._id : '#' %>">
+                    <%= item.equipment ? item.equipment.title : 'Item Removed' %>
+                  </a>
+                </strong>
+                <div style="font-size: 0.78rem; color: var(--text-muted);"><%= item.purpose %></div>
+              </td>
+
+              <!-- Buyer -->
+              <td>
+                <strong><%= item.borrower ? item.borrower.name : 'Unknown' %></strong>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                  <%= item.borrower ? item.borrower.department : '' %>
+                  <% if (item.borrower && item.borrower.studentId) { %><br>ID: <%= item.borrower.studentId %><% } %>
+                  <% if (item.borrower && item.borrower.phone) { %><br>📞 <%= item.borrower.phone %><% } %>
+                </div>
+              </td>
+
+              <!-- Payment Status -->
+              <td style="font-size: 0.85rem;">
+                <% if (item.depositAmount > 0) { %>
+                  <div><strong>₹<%= item.depositAmount %></strong></div>
+                  <% if (item.paymentStatus === 'PAID') { %>
+                    <span style="display: inline-block; font-size: 0.75rem; color: #16a34a; background: #dcfce7; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: 700;">
+                      ✅ PAID (Escrow)
+                    </span>
+                    <div>
+                      <a href="/borrow/receipt/<%= item._id %>" style="font-size: 0.75rem; color: var(--secondary); text-decoration: underline;">
+                        UTR: <%= (item.paymentDetails && item.paymentDetails.transactionId) ? item.paymentDetails.transactionId.slice(-6) : 'VERIFIED' %>
+                      </a>
+                    </div>
+                  <% } else if (item.paymentStatus === 'REFUNDED') { %>
+                    <span style="font-size: 0.75rem; color: var(--secondary);">Refunded</span>
+                  <% } else { %>
+                    <span style="font-size: 0.75rem; color: var(--warning); font-weight: 600;">Payment Pending</span>
+                  <% } %>
+                <% } else { %>
+                  <span style="color: var(--success); font-weight: 600;">✅ Free / Waived</span>
+                <% } %>
+              </td>
+
+              <!-- Pickup Location -->
+              <td style="font-size: 0.85rem; max-width: 170px;">
+                <div style="font-weight: 600; color: var(--dark);">
+                  📍 <%= item.pickupLocation || 'Electrical Lab - Room 304' %>
+                </div>
+              </td>
+
+              <!-- Pickup Date & Time -->
+              <td style="font-size: 0.85rem;">
+                <div style="font-weight: 700; color: var(--dark);">
+                  📅 <%= formattedDate %>
+                </div>
+                <div style="color: var(--secondary); font-size: 0.82rem; font-weight: 600;">
+                  ⏰ <%= item.pickupTime || '2:00 PM – 2:30 PM' %>
+                </div>
+                <% if (!isDateMatch && item.handoverStatus !== 'COMPLETED') { %>
+                  <div style="font-size: 0.72rem; color: #b45309;">Scheduled Date</div>
+                <% } %>
+              </td>
+
+              <!-- Order Status -->
+              <td>
+                <% if (item.handoverStatus === 'COMPLETED' || item.status === 'COMPLETED') { %>
+                  <span class="status-badge status-available">Completed ✅</span>
+                <% } else if (item.handoverStatus === 'READY_FOR_PICKUP') { %>
+                  <span style="display: inline-block; font-size: 0.78rem; font-weight: 700; color: #15803d; background: #dcfce7; border: 1px solid #86efac; padding: 0.25rem 0.55rem; border-radius: 20px;">
+                    🟢 Ready for Pickup
+                  </span>
+                <% } else if (item.handoverStatus === 'PREPARING') { %>
+                  <span style="display: inline-block; font-size: 0.78rem; font-weight: 700; color: #1e40af; background: #eff6ff; border: 1px solid #bfdbfe; padding: 0.25rem 0.55rem; border-radius: 20px;">
+                    📦 Preparing
+                  </span>
+                <% } else if (item.status === 'APPROVED') { %>
+                  <span class="status-badge status-borrowed">Confirmed</span>
+                <% } else if (item.status === 'PENDING') { %>
+                  <span class="status-badge status-pending">New Order</span>
+                <% } else { %>
+                  <span class="status-badge status-unavailable"><%= item.status %></span>
+                <% } %>
+              </td>
+
+              <!-- 12. Seller Order Actions Workflow -->
+              <td>
+                <div style="display: flex; flex-direction: column; gap: 0.35rem; min-width: 140px;">
+                  <!-- Action 1: Accept/Approve (New) -->
+                  <% if (item.status === 'PENDING') { %>
+                    <div style="display: flex; gap: 0.35rem;">
+                      <form action="/borrow/approve" method="POST" style="margin: 0; flex: 1;">
+                        <input type="hidden" name="requestId" value="<%= item._id %>">
+                        <button type="submit" class="btn btn-success btn-sm" style="width: 100%; font-size: 0.75rem;" data-loading-text="Accepting...">
+                          Accept Order
+                        </button>
+                      </form>
+                      <form action="/borrow/reject" method="POST" style="margin: 0;">
+                        <input type="hidden" name="requestId" value="<%= item._id %>">
+                        <button type="submit" class="btn btn-danger btn-sm" style="font-size: 0.75rem;" data-confirm="Decline this order?" data-loading-text="Declining...">
+                          Reject
+                        </button>
+                      </form>
+                    </div>
+
+                  <!-- Action 2: Mark as Preparing -->
+                  <% } else if (item.status === 'APPROVED' && item.handoverStatus !== 'PREPARING' && item.handoverStatus !== 'READY_FOR_PICKUP' && item.handoverStatus !== 'COMPLETED') { %>
+                    <form action="/borrow/prepare" method="POST" style="margin: 0;">
+                      <input type="hidden" name="requestId" value="<%= item._id %>">
+                      <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%; font-size: 0.75rem;" data-loading-text="Updating...">
+                        📦 Mark as Preparing
+                      </button>
+                    </form>
+
+                  <!-- Action 3: Mark as Ready for Pickup -->
+                  <% } else if (item.handoverStatus === 'PREPARING') { %>
+                    <form action="/borrow/ready-for-pickup" method="POST" style="margin: 0;">
+                      <input type="hidden" name="requestId" value="<%= item._id %>">
+                      <button type="submit" class="btn btn-primary btn-sm" style="width: 100%; font-size: 0.75rem; background: #16a34a; border-color: #16a34a;" data-loading-text="Notifying Buyer...">
+                        🟢 Ready for Pickup
+                      </button>
+                    </form>
+
+                  <!-- Action 4: Confirm Handover (Triggers Modal) -->
+                  <% } else if (item.handoverStatus === 'READY_FOR_PICKUP') { %>
+                    <button 
+                      type="button" 
+                      class="btn btn-success btn-sm" 
+                      style="width: 100%; font-size: 0.75rem;"
+                      onclick="openHandoverModal('<%= item._id %>', '<%= (item.equipment ? item.equipment.title : "Equipment").replace(/'/g, "\\'") %>', '<%= (item.borrower ? item.borrower.name : "Student").replace(/'/g, "\\'") %>', '<%= item.orderNumber || "ORD-10245" %>', '<%= (item.pickupLocation || "Electrical Lab - Room 304").replace(/'/g, "\\'") %>', '<%= formattedDate %>', '<%= item.pickupTime || "2:00 PM – 2:30 PM" %>', <%= isDateMatch %>)"
+                    >
+                      🤝 Confirm Handover
+                    </button>
+
+                  <!-- Action 5: Completed View -->
+                  <% } else if (item.handoverStatus === 'COMPLETED' || item.status === 'COMPLETED') { %>
+                    <a href="/borrow/receipt/<%= item._id %>" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; text-align: center;">
+                      View Receipt
+                    </a>
+                  <% } else { %>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">&mdash;</span>
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="empty-state" style="padding: 2.5rem 1rem;">
+      <div class="empty-icon">📦</div>
+      <h3 class="empty-title">No orders in this category</h3>
+      <p class="empty-desc">When students place orders for your listed gear, they will appear right here with full pickup coordinates.</p>
+    </div>
+  <% } %>
+</div>
+
+<!-- ========================================================================= -->
+<!-- OUTGOING REQUESTS & PURCHASES (Buyer View)                                -->
+<!-- ========================================================================= -->
+<div class="card">
+  <div style="margin-bottom: 1.25rem;">
+    <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--dark); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+      <span>🛒</span> My Orders & Borrow Requests
+    </h2>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">
+      Track your gear reservations, open pickup passes, and show QR verification on campus
+    </p>
+  </div>
+
+  <% if (myRequests.length > 0) { %>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Order # & Item</th>
+            <th>Seller</th>
+            <th>Pickup Location</th>
+            <th>Scheduled Pickup</th>
+            <th>Deposit Status</th>
+            <th>Order Status</th>
+            <th>Pickup Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% myRequests.forEach(function(item) { %>
+            <% 
+              const formattedDate = new Date(item.pickupDate || item.startDate).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+              });
+            %>
+            <tr>
+              <td>
+                <div style="font-family: monospace; font-size: 0.8rem; font-weight: 700; color: var(--primary);">
+                  #<%= item.orderNumber || 'ORD-' + item._id.toString().slice(-5).toUpperCase() %>
+                </div>
+                <strong>
+                  <a href="/equipment/<%= item.equipment ? item.equipment._id : '#' %>">
+                    <%= item.equipment ? item.equipment.title : 'Item Removed' %>
+                  </a>
+                </strong>
+              </td>
+
+              <td>
+                <strong><%= item.lender ? item.lender.name : 'Campus Peer' %></strong>
+                <div style="font-size: 0.8rem; color: var(--text-muted);"><%= item.lender ? item.lender.department : '' %></div>
+              </td>
+
+              <td style="font-size: 0.85rem;">
+                📍 <%= item.pickupLocation || 'Electrical Lab - Room 304' %>
+              </td>
+
+              <td style="font-size: 0.85rem;">
+                <div><strong>📅 <%= formattedDate %></strong></div>
+                <div style="color: var(--secondary); font-size: 0.82rem; font-weight: 600;">⏰ <%= item.pickupTime || '2:00 PM – 2:30 PM' %></div>
+              </td>
+
+              <td>
+                <% if (item.depositAmount > 0) { %>
+                  <div><strong>₹<%= item.depositAmount %></strong></div>
+                  <% if (item.paymentStatus === 'PAID') { %>
+                    <span style="display: inline-block; font-size: 0.75rem; color: #16a34a; background: #dcfce7; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: 600;">
+                      ✓ Paid (UPI)
+                    </span>
+                  <% } else { %>
+                    <span style="display: inline-block; font-size: 0.75rem; color: #d97706; background: #fef3c7; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: 600;">
+                      Payment Pending
+                    </span>
+                  <% } %>
+                <% } else { %>
+                  <span style="color: var(--success); font-weight: 600; font-size: 0.85rem;">Waived</span>
+                <% } %>
+              </td>
+
+              <td>
+                <% if (item.handoverStatus === 'COMPLETED' || item.status === 'COMPLETED') { %>
+                  <span class="status-badge status-available">Completed ✅</span>
+                <% } else if (item.handoverStatus === 'READY_FOR_PICKUP') { %>
+                  <span style="display: inline-block; font-size: 0.75rem; font-weight: 700; color: #15803d; background: #dcfce7; border: 1px solid #86efac; padding: 0.2rem 0.5rem; border-radius: 20px;">
+                    🟢 Ready for Pickup
+                  </span>
+                <% } else if (item.handoverStatus === 'PREPARING') { %>
+                  <span style="display: inline-block; font-size: 0.75rem; font-weight: 700; color: #1e40af; background: #eff6ff; border: 1px solid #bfdbfe; padding: 0.2rem 0.5rem; border-radius: 20px;">
+                    📦 Preparing
+                  </span>
+                <% } else { %>
+                  <span class="status-badge status-<%= item.status.toLowerCase() %>"><%= item.status %></span>
+                <% } %>
+              </td>
+
+              <td>
+                <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+                  <% if (item.paymentStatus === 'UNPAID' && item.depositAmount > 0) { %>
+                    <a href="/borrow/payment/<%= item._id %>" class="btn btn-primary btn-sm" style="font-size: 0.75rem;">
+                      📱 Pay via UPI
+                    </a>
+                  <% } else { %>
+                    <a href="/borrow/receipt/<%= item._id %>" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+                      <span>🎟️</span> Pickup Pass & QR
+                    </a>
+                  <% } %>
+
+                  <% if (item.status === 'PENDING') { %>
+                    <form action="/borrow/cancel" method="POST" style="margin: 0;">
+                      <input type="hidden" name="requestId" value="<%= item._id %>">
+                      <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;" data-confirm="Cancel this request?">Cancel</button>
+                    </form>
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="empty-state" style="padding: 2.5rem 1rem;">
+      <div class="empty-icon">🛒</div>
+      <h3 class="empty-title">You have no orders yet</h3>
+      <p class="empty-desc">Discover academic gear, lab tools, and electronics available across campus.</p>
+      <a href="/equipment" class="btn btn-primary btn-sm">Find Equipment to Order</a>
+    </div>
+  <% } %>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 18. HANDOVER CONFIRMATION MODAL POPUP                                     -->
+<!-- ========================================================================= -->
+<div id="handoverModalOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.65); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(3px);">
+  <div style="background: #ffffff; width: 92%; max-width: 520px; border-radius: var(--radius-card); box-shadow: var(--shadow-lg); overflow: hidden; animation: modalFadeIn 0.2s ease;">
+    <!-- Modal Header -->
+    <div style="background: var(--primary); color: #ffffff; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
+        <span>🤝</span> CONFIRM HANDOVER
+      </h3>
+      <button type="button" onclick="closeHandoverModal()" style="background: none; border: none; color: #ffffff; font-size: 1.4rem; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <!-- Modal Body Form -->
+    <form action="/borrow/confirm-handover" method="POST" id="handoverConfirmForm" style="padding: 1.5rem; margin: 0;">
+      <input type="hidden" name="requestId" id="modalRequestId" value="">
+
+      <!-- Verification details box -->
+      <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.25rem; font-size: 0.9rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+          <span style="color: var(--text-muted);">Product:</span>
+          <strong id="modalProduct" style="color: var(--dark); text-align: right;">Arduino UNO</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+          <span style="color: var(--text-muted);">Buyer:</span>
+          <strong id="modalBuyer" style="color: var(--dark);">Rahul Das</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+          <span style="color: var(--text-muted);">Order:</span>
+          <strong id="modalOrder" style="font-family: monospace; color: var(--primary);">#ORD-10245</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+          <span style="color: var(--text-muted);">Pickup Location:</span>
+          <strong id="modalLocation" style="text-align: right; max-width: 240px;">Electrical Lab - Room 304</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+          <span style="color: var(--text-muted);">Pickup Date:</span>
+          <strong id="modalDate">10 October 2026</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+          <span style="color: var(--text-muted);">Pickup Time:</span>
+          <strong id="modalTime">2:00 PM – 3:00 PM</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding-top: 0.4rem; border-top: 1px dashed var(--border);">
+          <span style="color: var(--text-muted);">Payment:</span>
+          <strong style="color: var(--success);">✅ PAID</strong>
+        </div>
+      </div>
+
+      <!-- Date mismatch warning notice if today is not the scheduled pickup date -->
+      <div id="modalDateWarning" style="display: none; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.82rem; margin-bottom: 1rem;">
+        ⚠️ <strong>Notice:</strong> This order is scheduled for a different date. Verify with the student before proceeding with early or rescheduled handover.
+      </div>
+
+      <!-- Buyer Verification Checkbox (Mandatory Requirement 18) -->
+      <div style="background: #eff6ff; border: 1.5px solid #93c5fd; border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 1.25rem;">
+        <label style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; font-size: 0.92rem; color: var(--primary); font-weight: 600; margin: 0;">
+          <input type="checkbox" name="collegeIdVerified" id="modalVerifyCheck" required style="width: 18px; height: 18px; margin-top: 0.15rem; cursor: pointer;">
+          <span>Buyer Verified ✅ (Verified College Student ID card and Order QR / Reference)</span>
+        </label>
+      </div>
+
+      <!-- Optional condition notes -->
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label for="handoverNotesInput" class="form-label" style="font-size: 0.85rem;">Handover Condition Notes (Optional)</label>
+        <input type="text" id="handoverNotesInput" name="handoverNotes" class="form-control" placeholder="e.g. All cables, power supply, and accessories verified intact.">
+      </div>
+
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem; text-align: center;">
+        Are you sure you want to complete the handover?
+      </p>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 0.75rem;">
+        <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeHandoverModal()">
+          [ CANCEL ]
+        </button>
+        <button type="submit" class="btn btn-success" style="flex: 1;" data-loading-text="Completing...">
+          [ CONFIRM HANDOVER ]
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openHandoverModal(requestId, product, buyer, order, location, date, time, isDateMatch) {
+    document.getElementById('modalRequestId').value = requestId;
+    document.getElementById('modalProduct').textContent = product;
+    document.getElementById('modalBuyer').textContent = buyer;
+    document.getElementById('modalOrder').textContent = '#' + order;
+    document.getElementById('modalLocation').textContent = location;
+    document.getElementById('modalDate').textContent = date;
+    document.getElementById('modalTime').textContent = time;
+
+    const warnBox = document.getElementById('modalDateWarning');
+    if (warnBox) {
+      warnBox.style.display = isDateMatch ? 'none' : 'block';
+    }
+
+    const check = document.getElementById('modalVerifyCheck');
+    if (check) check.checked = false;
+
+    const overlay = document.getElementById('handoverModalOverlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
+    }
+  }
+
+  function closeHandoverModal() {
+    const overlay = document.getElementById('handoverModalOverlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+  }
+
+  // Close modal when clicking outside
+  window.addEventListener('click', (e) => {
+    const overlay = document.getElementById('handoverModalOverlay');
+    if (e.target === overlay) {
+      closeHandoverModal();
+    }
+  });
+</script>
+
+<%- include('../partials/footer') %>

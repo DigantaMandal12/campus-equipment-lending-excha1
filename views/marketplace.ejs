@@ -1,0 +1,153 @@
+<%- include('partials/header') %>
+
+<!-- Marketplace Header -->
+<div class="page-header" style="margin-bottom: 1.5rem;">
+  <div>
+    <h1 class="page-title">Explore Academic Equipment</h1>
+    <p class="page-subtitle">Find calculators, mini drafters, multimeters, and specialized lab instruments across campus</p>
+  </div>
+  <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+    <button type="button" class="btn btn-secondary" onclick="toggleAiWidget()">
+      🤖 Ask AI Assistant
+    </button>
+    <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+      <a href="/equipment/add" class="btn btn-primary">+ List Equipment</a>
+    <% } else { %>
+      <a href="/auth/signup" class="btn btn-primary">Join Campus Exchange</a>
+    <% } %>
+  </div>
+</div>
+
+<!-- 2. Large Search Bar & Filter Card -->
+<form action="/search" method="GET" class="filter-bar" style="margin-bottom: 2rem;">
+  <div style="display: flex; gap: 0.75rem; margin-bottom: 1.25rem;">
+    <div class="search-hero-bar" style="flex: 1; border-radius: 12px; box-shadow: none;">
+      <span style="font-size: 1.2rem; color: var(--text-muted); padding-left: 0.4rem;">🔍</span>
+      <input 
+        type="text" 
+        id="searchQ" 
+        name="q" 
+        placeholder="Search by equipment name, tool type, or keywords..." 
+        value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+      >
+    </div>
+    <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">Search</button>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.85rem; align-items: flex-end;">
+    <div>
+      <label class="form-label" for="filterCat">Category</label>
+      <select id="filterCat" name="category" class="form-select" onchange="this.form.submit()">
+        <option value="ALL">All Categories</option>
+        <% categories.forEach(function(cat) { %>
+          <option value="<%= cat %>" <%= selectedCategory === cat ? 'selected' : '' %>><%= cat %></option>
+        <% }); %>
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" for="filterDept">Department</label>
+      <select id="filterDept" name="department" class="form-select" onchange="this.form.submit()">
+        <option value="ALL">All Departments</option>
+        <% departments.forEach(function(dept) { %>
+          <option value="<%= dept %>" <%= selectedDepartment === dept ? 'selected' : '' %>><%= dept %></option>
+        <% }); %>
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" for="filterAvail">Availability</label>
+      <select id="filterAvail" name="availability" class="form-select" onchange="this.form.submit()">
+        <option value="ALL" <%= selectedAvailability === 'ALL' ? 'selected' : '' %>>All Statuses</option>
+        <option value="AVAILABLE" <%= selectedAvailability === 'AVAILABLE' ? 'selected' : '' %>>Available Now</option>
+        <option value="UNAVAILABLE" <%= selectedAvailability === 'UNAVAILABLE' ? 'selected' : '' %>>Currently Loaned</option>
+      </select>
+    </div>
+
+    <div>
+      <a href="/search" class="btn btn-secondary" style="width: 100%; text-align: center;">Reset Filters</a>
+    </div>
+  </div>
+
+  <!-- Popular Quick Filters -->
+  <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-right: 0.25rem;">Popular:</span>
+    <a href="/search?q=drafter" class="filter-chip <%= (typeof searchQuery !== 'undefined' && searchQuery === 'drafter') ? 'active' : '' %>">Mini Drafter</a>
+    <a href="/search?q=multimeter" class="filter-chip <%= (typeof searchQuery !== 'undefined' && searchQuery === 'multimeter') ? 'active' : '' %>">Multimeter</a>
+    <a href="/search?category=Electronics" class="filter-chip <%= selectedCategory === 'Electronics' ? 'active' : '' %>">Electronics</a>
+    <a href="/search?category=Lab+Equipment" class="filter-chip <%= selectedCategory === 'Lab Equipment' ? 'active' : '' %>">Lab Equipment</a>
+    <a href="/search?category=Calculators" class="filter-chip <%= selectedCategory === 'Calculators' ? 'active' : '' %>">Calculators</a>
+    <a href="/search?availability=AVAILABLE" class="filter-chip <%= selectedAvailability === 'AVAILABLE' ? 'active' : '' %>" style="color: var(--success);">Available Now</a>
+  </div>
+</form>
+
+<!-- Results Counter -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+  <span style="font-size: 0.92rem; color: var(--text-muted); font-weight: 600;">
+    Showing <strong><%= equipmentList.length %></strong> <%= equipmentList.length === 1 ? 'equipment item' : 'equipment items' %>
+  </span>
+</div>
+
+<!-- 3. Equipment Cards Grid -->
+<% if (equipmentList.length > 0) { %>
+  <div class="equipment-grid">
+    <% equipmentList.forEach(function(item) { %>
+      <div class="equipment-card">
+        <div class="card-image-box">
+          <% if (item.imageUrl) { %>
+            <img src="<%= item.imageUrl %>" alt="<%= item.title %>">
+          <% } else { %>
+            <div class="card-image-placeholder">🔬</div>
+          <% } %>
+          <div style="position: absolute; top: 12px; right: 12px;">
+            <span class="status-badge <%= item.status === 'AVAILABLE' ? 'status-available' : 'status-borrowed' %>">
+              <%= item.status === 'AVAILABLE' ? '● Available' : '● Loaned' %>
+            </span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="equipment-category"><%= item.category %> &bull; <%= item.department %></div>
+          <h2 class="equipment-title"><%= item.title %></h2>
+          <p class="equipment-desc"><%= item.description %></p>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            <span>Lender: <strong><%= item.owner ? item.owner.name.split(' ')[0] : 'Senior' %></strong></span>
+            <span style="color: var(--accent); font-weight: 700;">★ <%= item.averageRating > 0 ? item.averageRating : '5.0' %></span>
+          </div>
+
+          <div class="card-meta">
+            <span style="font-weight: 800; font-size: 1.05rem; color: var(--dark);">
+              <%= item.dailyFee > 0 ? '₹' + item.dailyFee + '/day' : 'Free Borrow' %>
+            </span>
+            <span class="deposit-pill">
+              <%= item.depositAmount > 0 ? 'Deposit: ₹' + item.depositAmount : 'Zero Deposit' %>
+            </span>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <a href="/equipment/<%= item._id %>" class="btn btn-primary" style="width: 100%;">
+              <%= item.status === 'AVAILABLE' ? 'Borrow Equipment' : 'View Details' %>
+            </a>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+<% } else { %>
+  <div class="empty-state">
+    <div class="empty-icon">🔍</div>
+    <h3 class="empty-title">No equipment found matching your criteria</h3>
+    <p class="empty-desc">
+      Try searching for a different keyword or resetting your filters. Senior students frequently add new gear.
+    </p>
+    <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+      <a href="/search" class="btn btn-secondary">Clear All Filters</a>
+      <button type="button" class="btn btn-secondary" onclick="toggleAiWidget()">Ask AI Assistant</button>
+      <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+        <a href="/equipment/add" class="btn btn-primary">+ List Equipment</a>
+      <% } %>
+    </div>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>

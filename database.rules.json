@@ -1,0 +1,53 @@
+{
+  "rules": {
+    "users": {
+      ".indexOn": ["email", "role", "department", "createdAt"],
+      ".read": "auth != null",
+      "$userId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (auth.uid === $userId || auth.token.admin === true)",
+        "password": {
+          ".read": false,
+          ".write": "auth != null && (auth.uid === $userId || auth.token.admin === true)"
+        }
+      }
+    },
+    "equipment": {
+      ".indexOn": ["status", "category", "department", "owner", "createdAt"],
+      ".read": true,
+      "$equipmentId": {
+        ".write": "auth != null && (!data.exists() || data.child('owner').val() === auth.uid || auth.token.admin === true)"
+      }
+    },
+    "borrowRequests": {
+      ".indexOn": ["borrower", "lender", "equipment", "status", "pickupDate", "orderNumber"],
+      ".read": "auth != null",
+      "$requestId": {
+        ".write": "auth != null && (!data.exists() || data.child('borrower').val() === auth.uid || data.child('lender').val() === auth.uid || auth.token.admin === true)"
+      }
+    },
+    "reviews": {
+      ".indexOn": ["equipment", "user", "rating", "createdAt"],
+      ".read": true,
+      "$reviewId": {
+        ".write": "auth != null && (!data.exists() || data.child('user').val() === auth.uid || auth.token.admin === true)"
+      }
+    },
+    "notifications": {
+      ".indexOn": ["user", "isRead", "createdAt"],
+      ".read": "auth != null",
+      "$notificationId": {
+        ".read": "auth != null && (data.child('user').val() === auth.uid || auth.token.admin === true)",
+        ".write": "auth != null && (data.child('user').val() === auth.uid || auth.token.admin === true)"
+      }
+    },
+    "otp": {
+      ".read": false,
+      ".write": false
+    },
+    "sessions": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

@@ -1,0 +1,497 @@
+<%- include('../partials/header') %>
+
+<div style="margin-bottom: 1.5rem;">
+  <a href="/equipment" class="btn btn-secondary btn-sm">&larr; Back to Marketplace</a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; margin-bottom: 2.5rem;">
+  <!-- Left Column: Image & Specifications -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="width: 100%; height: 320px; background-color: #f1f5f9; display: flex; align-items: center; justify-content: center;">
+      <% if (equipment.imageUrl) { %>
+        <img src="<%= equipment.imageUrl %>" alt="<%= equipment.title %>" style="width: 100%; height: 100%; object-fit: cover;">
+      <% } else { %>
+        <div style="font-size: 5rem; color: #94a3b8;">🔬</div>
+      <% } %>
+    </div>
+    <div style="padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <span class="equipment-category"><%= equipment.category %></span>
+        <span class="status-badge <%= equipment.status === 'AVAILABLE' ? 'status-available' : 'status-borrowed' %>">
+          <%= equipment.status %>
+        </span>
+      </div>
+      <h1 style="font-size: 1.75rem; font-weight: 700; color: var(--dark); margin-bottom: 0.5rem;"><%= equipment.title %></h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;"><%= equipment.description %></p>
+
+      <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+        <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem;">Specifications</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.9rem;">
+          <div>
+            <span style="color: var(--text-muted);">Department:</span>
+            <div><strong><%= equipment.department %></strong></div>
+          </div>
+          <div>
+            <span style="color: var(--text-muted);">Condition:</span>
+            <div><strong><%= equipment.condition %></strong></div>
+          </div>
+          <div>
+            <span style="color: var(--text-muted);">Default Campus Location:</span>
+            <div><strong><%= equipment.location %></strong></div>
+          </div>
+          <div>
+            <span style="color: var(--text-muted);">Deposit / Price:</span>
+            <div><strong><%= equipment.depositAmount > 0 ? '₹' + equipment.depositAmount : 'None (Free)' %></strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Borrow / Purchase Action & Owner Profile -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <!-- Owner Information -->
+    <div class="card">
+      <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--dark); margin-bottom: 0.75rem;">Lender / Seller Information</h2>
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem;">
+          <%= equipment.owner ? equipment.owner.name.charAt(0).toUpperCase() : 'U' %>
+        </div>
+        <div>
+          <div style="font-weight: 700; color: var(--dark);"><%= equipment.owner ? equipment.owner.name : 'Campus Peer' %></div>
+          <div style="font-size: 0.85rem; color: var(--text-muted);"><%= equipment.owner ? equipment.owner.department : 'General' %></div>
+          <div style="font-size: 0.8rem; color: var(--success); font-weight: 600;">Verified Campus Member</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Borrow / Purchase Action Box -->
+    <div class="card">
+      <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--dark); margin-bottom: 1rem;">
+        Purchase / Borrow & College Pickup
+      </h2>
+
+      <% if (isOwner || isAdmin) { %>
+        <div class="alert-box alert-info">
+          <span>You manage this equipment listing.</span>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <a href="/equipment/<%= equipment._id %>/edit" class="btn btn-secondary" style="flex: 1;">Edit Listing</a>
+          <form action="/equipment/<%= equipment._id %>/delete" method="POST" style="flex: 1; margin: 0;">
+            <button type="submit" class="btn btn-danger" style="width: 100%;" data-confirm="Are you sure you want to delete this equipment? This action cannot be undone." data-loading-text="Deleting...">
+              Delete Item
+            </button>
+          </form>
+        </div>
+      <% } else if (typeof currentUser === 'undefined' || !currentUser) { %>
+        <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.95rem;">
+          Please sign in to select a college pickup location and order this equipment.
+        </p>
+        <a href="/auth/login" class="btn btn-primary" style="width: 100%;">Sign In to Buy / Borrow</a>
+      <% } else if (activeRequest) { %>
+        <!-- Existing Order Card Display -->
+        <% if (activeRequest.handoverStatus === 'READY_FOR_PICKUP') { %>
+          <div style="background: #f0fdf4; border: 2px solid #86efac; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; color: #166534; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">
+              <span>🟢</span> READY FOR PICKUP
+            </div>
+            <p style="font-size: 0.9rem; color: #1e293b; margin-bottom: 0.5rem;">
+              Your order <strong>#<%= activeRequest.orderNumber %></strong> is ready for pickup!
+            </p>
+            <div style="font-size: 0.85rem; color: #475569; margin-bottom: 0.75rem;">
+              <div>📍 <strong>Location:</strong> <%= activeRequest.pickupLocation %></div>
+              <div>📅 <strong>Date:</strong> <%= new Date(activeRequest.pickupDate).toLocaleDateString() %> &bull; ⏰ <%= activeRequest.pickupTime %></div>
+            </div>
+            <a href="/borrow/receipt/<%= activeRequest._id %>" class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+              <span>🎟️</span> View Pickup Pass & QR Code
+            </a>
+          </div>
+        <% } else if (activeRequest.handoverStatus === 'PREPARING') { %>
+          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1rem;">
+            <div style="color: #1e40af; font-weight: 700; font-size: 1.05rem; margin-bottom: 0.4rem;">
+              📦 Order Confirmed - Seller Preparing
+            </div>
+            <p style="font-size: 0.88rem; color: #334155; margin-bottom: 0.75rem;">
+              Payment is verified. The seller has been notified to prepare your product for pickup at <strong><%= activeRequest.pickupLocation %></strong> on <strong><%= new Date(activeRequest.pickupDate).toLocaleDateString() %></strong>.
+            </p>
+            <a href="/borrow/receipt/<%= activeRequest._id %>" class="btn btn-secondary btn-sm" style="width: 100%; text-align: center;">
+              View Order Details
+            </a>
+          </div>
+        <% } else if (activeRequest.status === 'COMPLETED') { %>
+          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1rem;">
+            <div style="color: #166534; font-weight: 700; font-size: 1.05rem; margin-bottom: 0.4rem;">
+              🎉 Order Completed
+            </div>
+            <p style="font-size: 0.88rem; color: #334155; margin-bottom: 0.75rem;">
+              You collected this item on <%= activeRequest.handoverAt ? new Date(activeRequest.handoverAt).toLocaleDateString() : 'recent pickup' %>. Please leave a rating below!
+            </p>
+            <a href="/borrow/receipt/<%= activeRequest._id %>" class="btn btn-secondary btn-sm" style="width: 100%; text-align: center;">
+              View Completion Receipt
+            </a>
+          </div>
+        <% } else { %>
+          <div class="alert-box alert-info">
+            <span>
+              You have an active request (<strong>#<%= activeRequest.orderNumber || 'ORD' %></strong>) in <strong><%= activeRequest.status %></strong> state.
+            </span>
+          </div>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <% if (activeRequest.depositAmount > 0 && activeRequest.paymentStatus === 'UNPAID') { %>
+              <a href="/borrow/payment/<%= activeRequest._id %>" class="btn btn-primary" style="flex: 1; text-align: center;">
+                📱 Pay via UPI (₹<%= activeRequest.depositAmount %>)
+              </a>
+            <% } %>
+            <a href="/borrow/requests" class="btn btn-secondary" style="flex: 1; text-align: center;">View Requests</a>
+          </div>
+        <% } %>
+      <% } else if (equipment.status !== 'AVAILABLE') { %>
+        <div class="alert-box alert-error">
+          <span>This item is currently booked by another campus member. You can check back once returned.</span>
+        </div>
+      <% } else { %>
+        <!-- Interactive Purchase + College Pickup Form -->
+        <form action="/borrow/request" method="POST" id="borrowPurchaseForm">
+          <input type="hidden" name="equipmentId" value="<%= equipment._id %>">
+          <input type="hidden" name="pickupSlotId" id="pickupSlotIdInput" value="<%= pickupSlots[0] ? pickupSlots[0].id : 'slot-1400-1430' %>">
+          <input type="hidden" name="pickupTime" id="pickupTimeInput" value="<%= pickupSlots[0] ? pickupSlots[0].label : '2:00 PM – 2:30 PM' %>">
+
+          <!-- 2. Pickup & Handover Section -->
+          <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+              <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--primary); margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+                <span>🏫</span> PICKUP & HANDOVER
+              </h3>
+              <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Campus Coordinated</span>
+            </div>
+
+            <!-- 📍 Pickup Location -->
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+              <label for="pickupLocationSelect" class="form-label" style="font-weight: 700; color: var(--dark); display: flex; align-items: center; gap: 0.35rem;">
+                <span>📍</span> Select College Pickup Location *
+              </label>
+              <select id="pickupLocationSelect" name="pickupLocation" class="form-select" onchange="updateSummary()" required>
+                <% pickupLocations.forEach(function(loc) { %>
+                  <option value="<%= loc %>" <%= (equipment.location && equipment.location.toLowerCase().includes(loc.slice(0, 10).toLowerCase())) ? 'selected' : '' %>>
+                    <%= loc %>
+                  </option>
+                <% }); %>
+              </select>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem;">
+                Official designated handover counter inside campus
+              </div>
+            </div>
+
+            <!-- 📅 Fixed Pickup Date -->
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+              <label class="form-label" style="font-weight: 700; color: var(--dark); display: flex; align-items: center; gap: 0.35rem;">
+                <span>📅</span> Select Fixed Pickup Date *
+              </label>
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <% availableDates.forEach(function(dateObj, idx) { %>
+                  <label class="pickup-date-card <%= !dateObj.isAvailable ? 'pickup-date-disabled' : '' %>" style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #ffffff; cursor: <%= dateObj.isAvailable ? 'pointer' : 'not-allowed' %>; transition: all 0.2s ease;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                      <input 
+                        type="radio" 
+                        name="pickupDate" 
+                        value="<%= dateObj.dateString %>" 
+                        class="pickup-date-radio" 
+                        <%= idx === 0 && dateObj.isAvailable ? 'checked' : '' %> 
+                        <%= !dateObj.isAvailable ? 'disabled' : '' %>
+                        onchange="onDateSelectionChange('<%= dateObj.dateString %>', '<%= dateObj.formatted %>')"
+                      >
+                      <span style="font-weight: 600; font-size: 0.92rem; color: var(--dark);">
+                        <%= dateObj.formatted %>
+                      </span>
+                    </div>
+                    <span style="font-size: 0.78rem; font-weight: 700; color: <%= dateObj.isAvailable ? 'var(--success)' : '#dc2626' %>;">
+                      <%= dateObj.isAvailable ? 'Available ✅' : '❌ NOT AVAILABLE' %>
+                    </span>
+                  </label>
+                <% }); %>
+              </div>
+              <input type="hidden" name="startDate" id="hiddenStartDate" value="<%= availableDates[0] ? availableDates[0].dateString : '' %>">
+              <input type="hidden" name="endDate" id="hiddenEndDate" value="">
+            </div>
+
+            <!-- ⏰ Fixed Pickup Time Slots -->
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+              <label class="form-label" style="font-weight: 700; color: var(--dark); display: flex; align-items: center; gap: 0.35rem;">
+                <span>⏰</span> Select Available Pickup Time Slot *
+              </label>
+              <div id="timeSlotsContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <% const firstDateStr = availableDates[0] ? availableDates[0].dateString : ''; %>
+                <% pickupSlots.forEach(function(slot, sIdx) { %>
+                  <% const isFull = bookedSlotsMap[`${firstDateStr}_${slot.id}`]; %>
+                  <button 
+                    type="button" 
+                    class="btn btn-sm slot-btn <%= sIdx === 0 && !isFull ? 'btn-primary' : 'btn-secondary' %>"
+                    data-slot-id="<%= slot.id %>"
+                    data-slot-label="<%= slot.label %>"
+                    <%= isFull ? 'disabled' : '' %>
+                    onclick="selectTimeSlot('<%= slot.id %>', '<%= slot.label %>')"
+                    style="padding: 0.5rem 0.4rem; font-size: 0.8rem; text-align: center; border-radius: var(--radius-sm); <%= isFull ? 'opacity: 0.5; background: #fee2e2; border-color: #fca5a5; color: #dc2626; cursor: not-allowed;' : '' %>"
+                  >
+                    <%= slot.label %> <%= isFull ? '❌ FULL' : '✅' %>
+                  </button>
+                <% }); %>
+              </div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.4rem;">
+                Times are reserved exclusively to avoid queueing. Double bookings are strictly prevented.
+              </div>
+            </div>
+
+            <!-- 👤 Seller / Handover Contact -->
+            <div style="border-top: 1px dashed var(--border); padding-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+              <span style="color: var(--text-muted); font-weight: 600;">👤 Handover By:</span>
+              <strong style="color: var(--dark);"><%= equipment.owner ? equipment.owner.name : 'Campus Peer' %> (Seller)</strong>
+            </div>
+          </div>
+
+          <!-- Academic Purpose / Notes -->
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="purpose" class="form-label">Academic Purpose / Course Note</label>
+            <input type="text" id="purpose" name="purpose" class="form-control" placeholder="e.g. EC402 Lab Assignment / Senior Capstone" required>
+          </div>
+
+          <!-- 6. Order Summary Card -->
+          <div style="background: #eff6ff; border: 1.5px solid #93c5fd; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
+            <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--secondary); font-weight: 800; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
+              ORDER SUMMARY
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; border-bottom: 1px solid #bfdbfe; padding-bottom: 0.5rem;">
+              <div>
+                <strong style="font-size: 1rem; color: var(--dark);"><%= equipment.title %></strong>
+                <div style="font-size: 0.8rem; color: var(--text-muted);"><%= equipment.category %> &bull; <%= equipment.condition %></div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 0.78rem; color: var(--text-muted);">PRICE / DEPOSIT</div>
+                <strong style="font-size: 1.05rem; color: var(--primary);">₹<%= equipment.depositAmount || 0 %></strong>
+              </div>
+            </div>
+
+            <!-- Pickup Details in Summary -->
+            <div style="font-size: 0.85rem; color: var(--primary); display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.75rem; border-bottom: 1px solid #bfdbfe; padding-bottom: 0.6rem;">
+              <div style="display: flex; gap: 0.4rem;">
+                <span>📍</span>
+                <span><strong>Pickup:</strong> <span id="summaryLocation"><%= pickupLocations[0] %></span></span>
+              </div>
+              <div style="display: flex; gap: 0.4rem;">
+                <span>📅</span>
+                <span><strong>Date:</strong> <span id="summaryDate"><%= availableDates[0] ? availableDates[0].formatted : 'Selected Date' %></span></span>
+              </div>
+              <div style="display: flex; gap: 0.4rem;">
+                <span>⏰</span>
+                <span><strong>Time:</strong> <span id="summaryTime"><%= pickupSlots[0] ? pickupSlots[0].label : '2:00 PM – 2:30 PM' %></span></span>
+              </div>
+              <div style="display: flex; gap: 0.4rem;">
+                <span>👤</span>
+                <span><strong>Seller:</strong> <%= equipment.owner ? equipment.owner.name : 'Rahul Das' %></span>
+              </div>
+            </div>
+
+            <!-- Total Payment -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; font-weight: 700; color: var(--dark);">
+              <span>Total Payable:</span>
+              <span style="color: var(--primary); font-size: 1.25rem;">₹<%= equipment.depositAmount || 0 %></span>
+            </div>
+            <% if (equipment.depositAmount > 0) { %>
+              <div style="font-size: 0.75rem; color: #166534; margin-top: 0.25rem;">
+                ✓ 100% Refundable Security Deposit held in campus escrow
+              </div>
+            <% } %>
+          </div>
+
+          <!-- Submit Button -->
+          <% if (equipment.depositAmount > 0) { %>
+            <button type="submit" class="btn btn-primary btn-lg" data-loading-text="Proceeding to UPI..." style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 1.05rem; padding: 0.85rem;">
+              <span>📱</span> PAY NOW & CONFIRM PICKUP (₹<%= equipment.depositAmount %>)
+            </button>
+          <% } else { %>
+            <button type="submit" class="btn btn-primary btn-lg" data-loading-text="Confirming Order..." style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 1.05rem; padding: 0.85rem;">
+              <span>✓</span> CONFIRM ORDER & PICKUP (FREE)
+            </button>
+          <% } %>
+        </form>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Reviews and Feedback Section -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+      <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--dark);">Student Reviews & Ratings</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        <% if (reviews.length > 0) { %>
+          Average Rating: <strong style="color: var(--accent);">★ <%= equipment.averageRating %> / 5</strong> (<%= reviews.length %> <%= reviews.length === 1 ? 'review' : 'reviews' %>)
+        <% } else { %>
+          No reviews yet. Be the first to share your experience with this equipment.
+        <% } %>
+      </p>
+    </div>
+  </div>
+
+  <% if (typeof currentUser !== 'undefined' && currentUser && !isOwner) { %>
+    <form action="/reviews/add" method="POST" style="background: #f8fafc; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 2rem;">
+      <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem;">Leave a Review</h3>
+      <input type="hidden" name="equipmentId" value="<%= equipment._id %>">
+
+      <div class="form-row">
+        <div class="form-group" style="max-width: 200px;">
+          <label for="rating" class="form-label">Rating</label>
+          <select id="rating" name="rating" class="form-select" required>
+            <option value="5">★★★★★ (5 - Excellent)</option>
+            <option value="4">★★★★☆ (4 - Good)</option>
+            <option value="3">★★★☆☆ (3 - Average)</option>
+            <option value="2">★★☆☆☆ (2 - Fair)</option>
+            <option value="1">★☆☆☆☆ (1 - Poor)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="flex: 1;">
+          <label for="comment" class="form-label">Feedback</label>
+          <input type="text" id="comment" name="comment" class="form-control" placeholder="Share condition, ease of use, or notes for other students..." required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-secondary btn-sm" data-loading-text="Submitting...">Post Review</button>
+    </form>
+  <% } %>
+
+  <!-- Review List -->
+  <% if (reviews.length > 0) { %>
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <% reviews.forEach(function(rev) { %>
+        <div style="border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+            <div>
+              <strong><%= rev.user ? rev.user.name : 'Student' %></strong>
+              <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;"><%= rev.user ? rev.user.department : '' %></span>
+            </div>
+            <div style="color: var(--accent); font-weight: 700;">
+              <% for(let s=0; s < rev.rating; s++) { %>★<% } %>
+            </div>
+          </div>
+          <p style="font-size: 0.92rem; color: var(--text-main); margin-top: 0.25rem;"><%= rev.comment %></p>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem;"><%= new Date(rev.createdAt).toLocaleDateString() %></div>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+</div>
+
+<script>
+  // Dynamic College Pickup & Order Summary Script
+  let selectedDateString = '<%= availableDates[0] ? availableDates[0].dateString : "" %>';
+  let selectedDateFormatted = '<%= availableDates[0] ? availableDates[0].formatted : "" %>';
+  let selectedSlotId = '<%= pickupSlots[0] ? pickupSlots[0].id : "slot-1400-1430" %>';
+  let selectedSlotLabel = '<%= pickupSlots[0] ? pickupSlots[0].label : "2:00 PM – 2:30 PM" %>';
+
+  function updateSummary() {
+    const locSelect = document.getElementById('pickupLocationSelect');
+    if (locSelect) {
+      document.getElementById('summaryLocation').textContent = locSelect.value;
+    }
+    const sumDate = document.getElementById('summaryDate');
+    if (sumDate) sumDate.textContent = selectedDateFormatted;
+
+    const sumTime = document.getElementById('summaryTime');
+    if (sumTime) sumTime.textContent = selectedSlotLabel;
+
+    // Set hidden return date 7 days after pickup date
+    if (selectedDateString) {
+      const pDate = new Date(selectedDateString);
+      const rDate = new Date(pDate);
+      rDate.setDate(rDate.getDate() + 7);
+      const hiddenEnd = document.getElementById('hiddenEndDate');
+      if (hiddenEnd) hiddenEnd.value = rDate.toISOString().split('T')[0];
+      const hiddenStart = document.getElementById('hiddenStartDate');
+      if (hiddenStart) hiddenStart.value = selectedDateString;
+    }
+  }
+
+  function selectTimeSlot(slotId, slotLabel) {
+    selectedSlotId = slotId;
+    selectedSlotLabel = slotLabel;
+    document.getElementById('pickupSlotIdInput').value = slotId;
+    document.getElementById('pickupTimeInput').value = slotLabel;
+
+    // Toggle active style on slot buttons
+    const buttons = document.querySelectorAll('.slot-btn');
+    buttons.forEach(btn => {
+      if (btn.getAttribute('data-slot-id') === slotId) {
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+      } else {
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-secondary');
+      }
+    });
+
+    updateSummary();
+  }
+
+  async function onDateSelectionChange(dateStr, formattedDate) {
+    selectedDateString = dateStr;
+    selectedDateFormatted = formattedDate;
+    updateSummary();
+
+    // Fetch real-time slot availability for this date to prevent double booking
+    try {
+      const resp = await fetch(`/borrow/api/slots-availability?equipmentId=<%= equipment._id %>&date=${dateStr}`);
+      const data = await resp.json();
+      if (data.success && data.slots) {
+        renderSlots(data.slots);
+      }
+    } catch (e) {
+      console.warn('Could not fetch real-time slots:', e);
+    }
+  }
+
+  function renderSlots(slots) {
+    const container = document.getElementById('timeSlotsContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+    let firstAvailableSet = false;
+
+    slots.forEach(slot => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-sm slot-btn ' + (slot.id === selectedSlotId && !slot.isBooked ? 'btn-primary' : 'btn-secondary');
+      btn.setAttribute('data-slot-id', slot.id);
+      btn.setAttribute('data-slot-label', slot.label);
+      btn.textContent = `${slot.label} ${slot.isBooked ? '❌ FULL' : '✅'}`;
+      btn.style.cssText = `padding: 0.5rem 0.4rem; font-size: 0.8rem; text-align: center; border-radius: var(--radius-sm); ${slot.isBooked ? 'opacity: 0.5; background: #fee2e2; border-color: #fca5a5; color: #dc2626; cursor: not-allowed;' : ''}`;
+
+      if (slot.isBooked) {
+        btn.disabled = true;
+      } else {
+        btn.onclick = () => selectTimeSlot(slot.id, slot.label);
+        if (!firstAvailableSet && slot.id === selectedSlotId) {
+          firstAvailableSet = true;
+        }
+      }
+      container.appendChild(btn);
+    });
+
+    // If current selected slot is booked, fallback to first available
+    const currentIsBooked = slots.find(s => s.id === selectedSlotId && s.isBooked);
+    if (currentIsBooked) {
+      const firstAvail = slots.find(s => !s.isBooked);
+      if (firstAvail) {
+        selectTimeSlot(firstAvail.id, firstAvail.label);
+      }
+    }
+  }
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    updateSummary();
+  });
+</script>
+
+<%- include('../partials/footer') %>

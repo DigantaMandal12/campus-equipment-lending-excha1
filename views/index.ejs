@@ -1,0 +1,153 @@
+<%- include('partials/header') %>
+
+<!-- Hero Banner: Clean Campus Trust Design -->
+<div style="background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius-card); padding: 3rem 1.5rem; margin-bottom: 2.25rem; text-align: center; box-shadow: var(--shadow-sm);">
+  <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--primary-light); color: var(--primary); padding: 0.35rem 0.9rem; border-radius: var(--radius-pill); font-size: 0.82rem; font-weight: 700; margin-bottom: 1.25rem; border: 1px solid var(--primary-border);">
+    <span>🎓 Peer-to-Peer Academic Equipment Exchange</span>
+  </div>
+
+  <h1 style="font-size: 2.4rem; font-weight: 800; color: var(--dark); line-height: 1.25; margin-bottom: 0.85rem; letter-spacing: -0.8px;">
+    Borrow Academic Equipment <br><span style="color: var(--primary);">from Senior Campus Peers</span>
+  </h1>
+
+  <p style="font-size: 1.05rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 2rem auto; line-height: 1.5;">
+    Mini drafters, engineering drawing boards, multimeters, lab coats, and calculators — shared safely with college pickup and verified returns.
+  </p>
+
+  <!-- 2. Large Search Bar -->
+  <form action="/search" method="GET" style="max-width: 620px; margin: 0 auto 1.25rem auto;">
+    <div class="search-hero-bar">
+      <span style="font-size: 1.25rem; color: var(--text-muted); padding-left: 0.4rem;">🔍</span>
+      <input 
+        type="text" 
+        name="q" 
+        placeholder="Search equipment (e.g. mini drafter, multimeter, calculator)..." 
+        aria-label="Search equipment"
+        required
+      >
+      <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
+        Search
+      </button>
+    </div>
+  </form>
+
+  <!-- Popular Quick Filters -->
+  <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+    <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); align-self: center;">Popular:</span>
+    <a href="/search?q=drafter" class="filter-chip">📐 Mini Drafter</a>
+    <a href="/search?q=multimeter" class="filter-chip">⚡ Multimeter</a>
+    <a href="/search?category=Calculators" class="filter-chip">🔢 Calculators</a>
+    <a href="/search?category=Electronics" class="filter-chip">🔬 Electronics</a>
+    <a href="/search?availability=AVAILABLE" class="filter-chip active">✅ Available Now</a>
+  </div>
+</div>
+
+<!-- 5. Simple Borrow Flow Overview (Step-by-step) -->
+<div class="card" style="margin-bottom: 2.5rem; background: #ffffff;">
+  <div style="text-align: center; margin-bottom: 1.5rem;">
+    <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--dark); margin-bottom: 0.35rem;">
+      Simple 4-Step Campus Borrow Flow
+    </h2>
+    <p style="font-size: 0.9rem; color: var(--text-muted);">
+      Designed so any student can borrow verified academic tools in under 2 minutes
+    </p>
+  </div>
+
+  <div class="form-row" style="text-align: center; gap: 1.25rem;">
+    <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1rem;">
+      <div style="width: 44px; height: 44px; border-radius: 10px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin: 0 auto 0.75rem auto; font-weight: 700;">
+        1
+      </div>
+      <h3 style="font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 0.25rem;">Select Equipment</h3>
+      <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.45;">Browse verified listings from senior students in your department.</p>
+    </div>
+
+    <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1rem;">
+      <div style="width: 44px; height: 44px; border-radius: 10px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin: 0 auto 0.75rem auto; font-weight: 700;">
+        2
+      </div>
+      <h3 style="font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 0.25rem;">Choose Dates & Spot</h3>
+      <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.45;">Select your return date and convenient college pickup counter.</p>
+    </div>
+
+    <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1rem;">
+      <div style="width: 44px; height: 44px; border-radius: 10px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin: 0 auto 0.75rem auto; font-weight: 700;">
+        3
+      </div>
+      <h3 style="font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 0.25rem;">Senior Approval</h3>
+      <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.45;">The peer lender approves your request and prepares the gear.</p>
+    </div>
+
+    <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1rem;">
+      <div style="width: 44px; height: 44px; border-radius: 10px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin: 0 auto 0.75rem auto; font-weight: 700;">
+        4
+      </div>
+      <h3 style="font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 0.25rem;">Collect & Return</h3>
+      <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.45;">Show your College ID, collect gear, and return on time to build Trust.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 3. Featured Equipment Section -->
+<div class="page-header" style="margin-bottom: 1.25rem;">
+  <div>
+    <h2 class="page-title" style="font-size: 1.45rem;">Featured Academic Equipment</h2>
+    <p class="page-subtitle">Available right now for campus students and lab researchers</p>
+  </div>
+  <a href="/search" class="btn btn-secondary btn-sm">Explore All Equipment &rarr;</a>
+</div>
+
+<% if (typeof featuredEquipment !== 'undefined' && featuredEquipment.length > 0) { %>
+  <div class="equipment-grid">
+    <% featuredEquipment.forEach(function(item) { %>
+      <div class="equipment-card">
+        <div class="card-image-box">
+          <% if (item.imageUrl) { %>
+            <img src="<%= item.imageUrl %>" alt="<%= item.title %>">
+          <% } else { %>
+            <div class="card-image-placeholder">🔬</div>
+          <% } %>
+          <div style="position: absolute; top: 12px; right: 12px;">
+            <span class="status-badge <%= item.status === 'AVAILABLE' ? 'status-available' : 'status-borrowed' %>">
+              <%= item.status === 'AVAILABLE' ? '● Available' : '● Loaned' %>
+            </span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="equipment-category"><%= item.category %> &bull; <%= item.department %></div>
+          <h3 class="equipment-title"><%= item.title %></h3>
+          <p class="equipment-desc"><%= item.description %></p>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            <span>Lender: <strong><%= item.owner ? item.owner.name.split(' ')[0] : 'Senior Peer' %></strong></span>
+            <span style="color: var(--accent); font-weight: 700;">★ <%= item.averageRating > 0 ? item.averageRating : '5.0' %></span>
+          </div>
+
+          <div class="card-meta">
+            <span style="font-weight: 800; font-size: 1.05rem; color: var(--dark);">
+              <%= item.dailyFee > 0 ? '₹' + item.dailyFee + '/day' : 'Free Borrow' %>
+            </span>
+            <span class="deposit-pill">
+              <%= item.depositAmount > 0 ? 'Deposit: ₹' + item.depositAmount : 'Zero Deposit' %>
+            </span>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <a href="/equipment/<%= item._id %>" class="btn btn-primary" style="width: 100%;">
+              <%= item.status === 'AVAILABLE' ? 'Borrow Equipment' : 'View Details' %>
+            </a>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+<% } else { %>
+  <div class="empty-state">
+    <div class="empty-icon">📦</div>
+    <h3 class="empty-title">No equipment listed yet</h3>
+    <p class="empty-desc">Be the first senior student to list drawing tools or lab gear for junior peers.</p>
+    <a href="/equipment/add" class="btn btn-primary">+ List Equipment</a>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,13 @@
+<%- include('partials/header') %>
+
+<div class="empty-state">
+  <div class="empty-icon">⚠️</div>
+  <h1 class="empty-title"><%= typeof title !== 'undefined' ? title : 'Notice' %></h1>
+  <p class="empty-desc"><%= typeof message !== 'undefined' ? message : 'Something went wrong. Please try again.' %></p>
+  <div style="display: flex; gap: 0.75rem; justify-content: center;">
+    <a href="/equipment" class="btn btn-primary">Browse Marketplace</a>
+    <a href="/dashboard" class="btn btn-secondary">Go to Dashboard</a>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

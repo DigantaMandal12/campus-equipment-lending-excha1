@@ -1,0 +1,46 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Notifications</h1>
+    <p class="page-subtitle">Updates regarding your equipment requests, approvals, and reminders</p>
+  </div>
+  <% if (notifications.length > 0) { %>
+    <form action="/notifications/mark-read" method="POST" style="margin: 0;">
+      <button type="submit" class="btn btn-secondary btn-sm" data-loading-text="Marking...">Mark All as Read</button>
+    </form>
+  <% } %>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+  <% if (notifications.length > 0) { %>
+    <div style="display: flex; flex-direction: column;">
+      <% notifications.forEach(function(n) { %>
+        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); background-color: <%= n.isRead ? '#ffffff' : '#f8fafc' %>; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <strong style="color: var(--dark); font-size: 0.95rem;"><%= n.title %></strong>
+              <% if (!n.isRead) { %>
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--secondary);"></span>
+              <% } %>
+            </div>
+            <p style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 0.35rem;"><%= n.message %></p>
+            <span style="font-size: 0.78rem; color: var(--text-muted);"><%= new Date(n.createdAt).toLocaleString() %></span>
+          </div>
+
+          <% if (n.link && n.link !== '#') { %>
+            <a href="<%= n.link %>" class="btn btn-secondary btn-sm" style="white-space: nowrap;">View</a>
+          <% } %>
+        </div>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <div class="empty-icon">🔔</div>
+      <h3 class="empty-title">You're all caught up!</h3>
+      <p class="empty-desc">You have no new notifications at this time.</p>
+    </div>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

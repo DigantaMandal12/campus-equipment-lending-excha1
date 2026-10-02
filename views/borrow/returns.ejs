@@ -1,0 +1,441 @@
+<%- include('../partials/header') %>
+
+<% 
+  // Identify if any borrowed item has an urgent return deadline (<= 2 days or overdue)
+  const urgentItem = (typeof activeBorrowed !== 'undefined' && activeBorrowed.length > 0)
+    ? activeBorrowed.find(item => {
+        const d = Math.ceil((new Date(item.endDate) - new Date()) / (1000 * 60 * 60 * 24));
+        return d <= 2;
+      })
+    : null;
+%>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Active Loans & Returns</h1>
+    <p class="page-subtitle">Track return countdowns, 48-hour reminders, and confirm gear condition upon return</p>
+  </div>
+  <a href="/search" class="btn btn-secondary">🔍 Browse Marketplace</a>
+</div>
+
+<!-- 48-Hour Return Reminder Notice (if urgent item exists) -->
+<% if (urgentItem) { %>
+  <% 
+    const uDiffDays = Math.ceil((new Date(urgentItem.endDate) - new Date()) / (1000 * 60 * 60 * 24));
+    const isUrgentOverdue = uDiffDays < 0;
+  %>
+  <div class="return-alert-banner" style="background: <%= isUrgentOverdue ? '#fff1f2' : '#fffbeb' %>; border: 1.5px solid <%= isUrgentOverdue ? '#fca5a5' : '#fde68a' %>; border-radius: var(--radius-card); padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: flex-start; gap: 1rem; box-shadow: var(--shadow-sm);">
+    <div style="font-size: 2rem; line-height: 1;">
+      <%= isUrgentOverdue ? '🚨' : '⚠️' %>
+    </div>
+    <div style="flex: 1;">
+      <div style="font-weight: 800; font-size: 1.05rem; color: <%= isUrgentOverdue ? '#991b1b' : '#92400e' %>; margin-bottom: 0.25rem;">
+        <%= isUrgentOverdue ? 'CRITICAL: Equipment Return Overdue' : '🔔 48-Hour Return Reminder Notice' %>
+      </div>
+      <p style="font-size: 0.9rem; color: <%= isUrgentOverdue ? '#7f1d1d' : '#78350f' %>; margin: 0 0 0.5rem 0; line-height: 1.5;">
+        Your borrowed equipment <strong><%= urgentItem.equipment ? urgentItem.equipment.title : 'Academic Equipment' %></strong> is 
+        <%= isUrgentOverdue ? `overdue by ${Math.abs(uDiffDays)} day(s)` : `due for return on ${new Date(urgentItem.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` %>.
+        Please coordinate handover with <strong><%= urgentItem.lender ? urgentItem.lender.name : 'your peer lender' %></strong> to release your deposit and protect your 5.0 Trust Score.
+      </p>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="/borrow/receipt/<%= urgentItem._id %>" class="btn btn-secondary btn-sm" style="font-size: 0.8rem;">
+          View Pickup / Handover Pass
+        </a>
+        <form action="/borrow/return" method="POST" style="margin: 0;">
+          <input type="hidden" name="requestId" value="<%= urgentItem._id %>">
+          <input type="hidden" name="returnNotes" value="Handed back at college pickup spot">
+          <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.8rem;" data-confirm="Confirm physical return of this equipment to the lender?">
+            Mark Returned &rarr;
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<!-- ========================================================================= -->
+<!-- Section 1: Items Currently In Your Care (Borrower View)                   -->
+<!-- ========================================================================= -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+      <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--dark); margin: 0;">
+        🎒 Equipment Currently In Your Care
+      </h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">
+        Return on or before the scheduled deadline to preserve your 5.0 Trust Score
+      </p>
+    </div>
+    <span class="status-badge status-available">
+      <%= activeBorrowed.length %> <%= activeBorrowed.length === 1 ? 'Item Active' : 'Items Active' %>
+    </span>
+  </div>
+
+  <% if (activeBorrowed.length > 0) { %>
+    <!-- Desktop Table View -->
+    <div class="table-responsive desktop-only">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Equipment</th>
+            <th>Senior Lender</th>
+            <th>Return Deadline</th>
+            <th>Return Countdown</th>
+            <th>Security Deposit</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% activeBorrowed.forEach(function(item) { %>
+            <% 
+              const end = new Date(item.endDate);
+              const now = new Date();
+              const diffMs = end - now;
+              const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+              const isOverdue = diffDays < 0;
+              const is48hWarning = diffDays <= 2 && diffDays >= 0;
+            %>
+            <tr style="<%= isOverdue ? 'background-color: #fff1f2;' : (is48hWarning ? 'background-color: #fffbeb;' : '') %>">
+              <td>
+                <strong>
+                  <a href="/equipment/<%= item.equipment ? item.equipment._id : '#' %>">
+                    <%= item.equipment ? item.equipment.title : 'Academic Item' %>
+                  </a>
+                </strong>
+                <div style="font-size: 0.78rem; color: var(--text-muted);"><%= item.equipment ? item.equipment.category : 'General' %></div>
+              </td>
+
+              <td>
+                <strong><%= item.lender ? item.lender.name : 'Senior Peer' %></strong>
+                <div style="font-size: 0.78rem; color: var(--text-muted);">
+                  <%= item.lender ? item.lender.department : '' %> &bull; <%= item.lender ? (item.lender.phone || item.lender.email) : '' %>
+                </div>
+              </td>
+
+              <td style="font-size: 0.88rem;">
+                <strong><%= end.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %></strong>
+                <div style="color: var(--text-muted); font-size: 0.78rem;">Campus pickup counter</div>
+              </td>
+
+              <!-- 9. Dynamic Return Countdown -->
+              <td>
+                <% if (isOverdue) { %>
+                  <span class="status-badge status-overdue">
+                    🚨 <%= Math.abs(diffDays) %> <%= Math.abs(diffDays) === 1 ? 'DAY' : 'DAYS' %> OVERDUE
+                  </span>
+                <% } else if (diffDays === 0) { %>
+                  <span class="status-badge status-pending">
+                    ⚠️ DUE TODAY
+                  </span>
+                <% } else if (diffDays === 1) { %>
+                  <span class="status-badge status-pending">
+                    ⏳ 1 DAY REMAINING
+                  </span>
+                <% } else { %>
+                  <span class="status-badge status-available">
+                    ⏳ <%= diffDays %> DAYS REMAINING
+                  </span>
+                <% } %>
+
+                <% if (is48hWarning) { %>
+                  <div style="font-size: 0.72rem; color: #b45309; font-weight: 700; margin-top: 0.25rem;">
+                    🔔 48-Hour Return Alert
+                  </div>
+                <% } %>
+              </td>
+
+              <td style="font-size: 0.88rem;">
+                <% if (item.depositAmount > 0) { %>
+                  <strong>₹<%= item.depositAmount %></strong>
+                  <% if (item.paymentStatus === 'PAID') { %>
+                    <div style="color: var(--success); font-weight: 700; font-size: 0.75rem;">
+                      🔒 HELD IN ESCROW
+                    </div>
+                  <% } else { %>
+                    <div style="color: var(--warning); font-size: 0.75rem;">Pending Payment</div>
+                  <% } %>
+                <% } else { %>
+                  <span style="color: var(--success); font-weight: 700; font-size: 0.82rem;">Free / Zero Deposit</span>
+                <% } %>
+              </td>
+
+              <td>
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                  <a href="/borrow/receipt/<%= item._id %>" class="btn btn-secondary btn-sm" style="font-size: 0.78rem;">
+                    Pass
+                  </a>
+                  <form action="/borrow/return" method="POST" style="margin: 0;">
+                    <input type="hidden" name="requestId" value="<%= item._id %>">
+                    <input type="hidden" name="returnNotes" value="Handed back at college pickup spot">
+                    <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.78rem;" data-confirm="Confirm physical return of this equipment to the lender?">
+                      Return
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View (for mobile screens) -->
+    <div class="mobile-only return-card-list">
+      <% activeBorrowed.forEach(function(item) { %>
+        <% 
+          const end = new Date(item.endDate);
+          const now = new Date();
+          const diffMs = end - now;
+          const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+          const isOverdue = diffDays < 0;
+          const is48hWarning = diffDays <= 2 && diffDays >= 0;
+        %>
+        <div class="return-mobile-card <%= isOverdue ? 'overdue' : (is48hWarning ? 'warning' : '') %>">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <div>
+              <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--dark); margin: 0 0 0.15rem 0;">
+                <a href="/equipment/<%= item.equipment ? item.equipment._id : '#' %>">
+                  <%= item.equipment ? item.equipment.title : 'Academic Item' %>
+                </a>
+              </h3>
+              <div style="font-size: 0.8rem; color: var(--text-muted);"><%= item.equipment ? item.equipment.category : 'General' %> &bull; <%= item.equipment ? item.equipment.department : '' %></div>
+            </div>
+            <div>
+              <% if (isOverdue) { %>
+                <span class="status-badge status-overdue">🚨 <%= Math.abs(diffDays) %>d Overdue</span>
+              <% } else if (diffDays === 0) { %>
+                <span class="status-badge status-pending">⚠️ Due Today</span>
+              <% } else { %>
+                <span class="status-badge status-available">⏳ <%= diffDays %>d Left</span>
+              <% } %>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.82rem; background: var(--bg-main); padding: 0.65rem 0.85rem; border-radius: 8px; margin-bottom: 0.75rem;">
+            <div>
+              <span style="color: var(--text-muted); display: block;">Lender:</span>
+              <strong><%= item.lender ? item.lender.name : 'Senior' %></strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block;">Due Date:</span>
+              <strong><%= end.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) %></strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block;">Deposit Escrow:</span>
+              <strong style="color: var(--success);"><%= item.depositAmount > 0 ? '₹' + item.depositAmount : 'Zero Deposit' %></strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block;">Pickup Spot:</span>
+              <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;"><%= item.pickupLocation || 'Campus Counter' %></strong>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem;">
+            <a href="/borrow/receipt/<%= item._id %>" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center;">
+              Pickup Pass
+            </a>
+            <form action="/borrow/return" method="POST" style="flex: 1; margin: 0;">
+              <input type="hidden" name="requestId" value="<%= item._id %>">
+              <input type="hidden" name="returnNotes" value="Handed back at college pickup spot">
+              <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;" data-confirm="Confirm physical return of this equipment to the lender?">
+                Return Item
+              </button>
+            </form>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <div class="empty-icon">🎒</div>
+      <h3 class="empty-title">No equipment currently checked out</h3>
+      <p class="empty-desc">When you borrow mini drafters, multimeters, or calculators, they will appear here with active countdowns.</p>
+      <a href="/search" class="btn btn-primary btn-sm">Find Academic Equipment</a>
+    </div>
+  <% } %>
+</div>
+
+<!-- ========================================================================= -->
+<!-- Section 2: Items You Loaned Out (Senior Lender View)                      -->
+<!-- ========================================================================= -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+      <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--dark); margin: 0;">
+        📤 Gear Out With Junior Borrowers
+      </h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">
+        Inspect physical condition upon return and authorize deposit release
+      </p>
+    </div>
+    <span class="status-badge status-borrowed">
+      <%= activeLent.length %> <%= activeLent.length === 1 ? 'Loan Active' : 'Loans Active' %>
+    </span>
+  </div>
+
+  <% if (activeLent.length > 0) { %>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Equipment</th>
+            <th>Junior Borrower</th>
+            <th>Return Due</th>
+            <th>Countdown Status</th>
+            <th>Escrow Deposit</th>
+            <th>Confirm Return & Inspection</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% activeLent.forEach(function(item) { %>
+            <% 
+              const end = new Date(item.endDate);
+              const now = new Date();
+              const diffMs = end - now;
+              const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+              const isOverdue = diffDays < 0;
+            %>
+            <tr style="<%= isOverdue ? 'background-color: #fff1f2;' : '' %>">
+              <td>
+                <strong>
+                  <a href="/equipment/<%= item.equipment ? item.equipment._id : '#' %>">
+                    <%= item.equipment ? item.equipment.title : 'Item Removed' %>
+                  </a>
+                </strong>
+                <div style="font-size: 0.78rem; color: var(--text-muted);"><%= item.equipment ? item.equipment.category : '' %></div>
+              </td>
+
+              <td>
+                <strong><%= item.borrower ? item.borrower.name : 'Unknown' %></strong>
+                <div style="font-size: 0.78rem; color: var(--text-muted);">
+                  <%= item.borrower ? item.borrower.department : '' %>
+                  <% if (item.borrower && item.borrower.phone) { %> &bull; <%= item.borrower.phone %><% } %>
+                </div>
+              </td>
+
+              <td style="font-size: 0.88rem;">
+                <strong><%= end.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %></strong>
+              </td>
+
+              <td>
+                <% if (isOverdue) { %>
+                  <span class="status-badge status-overdue">
+                    <%= Math.abs(diffDays) %> Days Overdue
+                  </span>
+                <% } else if (diffDays === 0) { %>
+                  <span class="status-badge status-pending">Due Today</span>
+                <% } else { %>
+                  <span class="status-badge status-available"><%= diffDays %> Days Left</span>
+                <% } %>
+              </td>
+
+              <td>
+                <% if (item.depositAmount > 0) { %>
+                  <strong>₹<%= item.depositAmount %></strong>
+                  <div style="font-size: 0.75rem; color: var(--success); font-weight: 700;">Held in Escrow</div>
+                <% } else { %>
+                  <span style="color: var(--text-muted); font-size: 0.85rem;">None</span>
+                <% } %>
+              </td>
+
+              <td>
+                <form action="/borrow/return" method="POST" style="margin: 0; display: flex; flex-direction: column; gap: 0.35rem;">
+                  <input type="hidden" name="requestId" value="<%= item._id %>">
+                  <input 
+                    type="text" 
+                    name="returnNotes" 
+                    placeholder="Inspect condition: 'Good', 'Cables checked'..." 
+                    class="form-control" 
+                    style="font-size: 0.8rem; padding: 0.4rem 0.65rem; border-radius: 8px;"
+                    required
+                  >
+                  <button type="submit" class="btn btn-success btn-sm" data-confirm="Confirm physical return? Security deposit will be released back to the borrower via UPI." data-loading-text="Confirming...">
+                    ✓ Confirm Return & Release Deposit
+                  </button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <div class="empty-icon">📤</div>
+      <h3 class="empty-title">None of your equipment is currently loaned out</h3>
+      <p class="empty-desc">When students borrow your listed tools, you can track deadlines and confirm returns here.</p>
+    </div>
+  <% } %>
+</div>
+
+<!-- ========================================================================= -->
+<!-- Section 3: Completed Return History & Two-Way Ratings                     -->
+<!-- ========================================================================= -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <div>
+      <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--dark); margin: 0;">
+        📜 Completed Return History & Mutual Ratings
+      </h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">
+        Successfully completed campus loans with refunded escrow records
+      </p>
+    </div>
+  </div>
+
+  <% if (completedHistory.length > 0) { %>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Equipment</th>
+            <th>Junior Borrower</th>
+            <th>Senior Lender</th>
+            <th>Returned On</th>
+            <th>Escrow Deposit Status</th>
+            <th>Condition & Ratings</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% completedHistory.forEach(function(item) { %>
+            <tr>
+              <td>
+                <strong><%= item.equipment ? item.equipment.title : 'Item Removed' %></strong>
+              </td>
+              <td><%= item.borrower ? item.borrower.name : 'Student' %></td>
+              <td><%= item.lender ? item.lender.name : 'Senior' %></td>
+              <td style="font-size: 0.85rem;"><%= item.returnDate ? new Date(item.returnDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Completed' %></td>
+              <td style="font-size: 0.85rem;">
+                <% if (item.depositAmount > 0) { %>
+                  <span style="color: var(--success); font-weight: 700;">
+                    ✓ Released via UPI (₹<%= item.depositAmount %>)
+                  </span>
+                <% } else { %>
+                  <span style="color: var(--text-muted);">Zero Deposit</span>
+                <% } %>
+              </td>
+              <td>
+                <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.35rem;">
+                  "<%= item.returnNotes || 'Returned safely in good condition' %>"
+                </div>
+                <% if (item.equipment) { %>
+                  <a href="/equipment/<%= item.equipment._id %>" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.55rem;">
+                    ⭐ Rate / Review
+                  </a>
+                <% } %>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <div class="empty-icon">📜</div>
+      <h3 class="empty-title">No completed return records yet</h3>
+      <p class="empty-desc">Completed peer borrowings and escrow releases will be permanently logged here.</p>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

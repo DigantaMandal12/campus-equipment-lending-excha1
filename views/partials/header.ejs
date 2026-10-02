@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Campus Equipment Lending Exchange' %></title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- 1. Sticky Navbar -->
+  <header class="site-header">
+    <div class="nav-container">
+      <a href="/" class="logo-brand">
+        <span class="logo-icon">📐</span>
+        <span>Campus Lending</span>
+        <span class="logo-badge">Trust Exchange</span>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav>
+        <ul class="nav-links">
+          <% const path = typeof activePath !== 'undefined' ? activePath : ''; %>
+
+          <li class="nav-item">
+            <a href="/search" class="<%= (path.startsWith('/search') || path.startsWith('/equipment') && path !== '/equipment/add') ? 'active' : '' %>">
+              🔍 Explore
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="/chatbot" class="<%= (path.startsWith('/chatbot') || path.startsWith('/chat')) ? 'active' : '' %>">
+              🤖 AI Advisor
+            </a>
+          </li>
+
+          <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+            <li class="nav-item">
+              <a href="/dashboard" class="<%= path === '/dashboard' ? 'active' : '' %>">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a href="/borrow/requests" class="<%= path.startsWith('/borrow/requests') ? 'active' : '' %>">Orders</a>
+            </li>
+            <li class="nav-item">
+              <a href="/borrow/returns" class="<%= path.startsWith('/borrow/returns') ? 'active' : '' %>">Returns</a>
+            </li>
+            <li class="nav-item">
+              <a href="/notifications" class="<%= path === '/notifications' ? 'active' : '' %>" title="Notifications">
+                🔔
+              </a>
+            </li>
+            <% if (currentUser.role === 'admin') { %>
+              <li class="nav-item">
+                <a href="/admin" class="<%= path.startsWith('/admin') ? 'active' : '' %>">Admin</a>
+              </li>
+            <% } %>
+
+            <li class="nav-item">
+              <a href="/profile" class="nav-profile-chip <%= path === '/profile' ? 'active' : '' %>">
+                <div class="avatar-circle">
+                  <%= currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U' %>
+                </div>
+                <span><%= currentUser.name.split(' ')[0] %></span>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <form action="/auth/logout" method="POST" style="display:inline; margin: 0;">
+                <button type="submit" class="btn btn-secondary btn-sm" style="margin-left: 0.2rem; padding: 0.35rem 0.65rem; color: var(--text-muted);">
+                  Logout
+                </button>
+              </form>
+            </li>
+          <% } else { %>
+            <li class="nav-item">
+              <a href="/auth/login" class="<%= path === '/auth/login' ? 'active' : '' %>">Sign In</a>
+            </li>
+            <li class="nav-item">
+              <a href="/auth/signup" class="btn btn-primary btn-sm <%= (path === '/auth/signup' || path === '/auth/register') ? 'active' : '' %>">
+                Register
+              </a>
+            </li>
+          <% } %>
+        </ul>
+      </nav>
+
+      <!-- Mobile Top Bar Quick Icons -->
+      <div class="mobile-header-actions" style="display: none;">
+        <a href="/notifications" style="font-size: 1.25rem; color: var(--dark); padding: 0.3rem;">🔔</a>
+        <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+          <a href="/profile" style="display: flex; align-items: center;">
+            <div class="avatar-circle" style="width: 28px; height: 28px; font-size: 0.8rem;">
+              <%= currentUser.name.charAt(0).toUpperCase() %>
+            </div>
+          </a>
+        <% } else { %>
+          <a href="/auth/login" class="btn btn-primary btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">Sign In</a>
+        <% } %>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <%- include('alerts') %>

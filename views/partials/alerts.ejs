@@ -1,0 +1,20 @@
+<% if (typeof alertSuccess !== 'undefined' && alertSuccess) { %>
+  <div class="alert-box alert-success" role="alert">
+    <span><%= alertSuccess %></span>
+    <button type="button" class="alert-close" aria-label="Close">&times;</button>
+  </div>
+<% } %>
+
+<% if (typeof alertError !== 'undefined' && alertError) { %>
+  <div class="alert-box alert-error" role="alert">
+    <span><%= alertError %></span>
+    <button type="button" class="alert-close" aria-label="Close">&times;</button>
+  </div>
+<% } %>
+
+<% if (typeof alertInfo !== 'undefined' && alertInfo) { %>
+  <div class="alert-box alert-info" role="alert">
+    <span><%= alertInfo %></span>
+    <button type="button" class="alert-close" aria-label="Close">&times;</button>
+  </div>
+<% } %>

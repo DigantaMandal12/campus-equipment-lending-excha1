@@ -1,0 +1,193 @@
+<!-- Floating AI Hardware Assistant Widget -->
+<div id="aiFloatingWidget" class="ai-floating-widget" style="position: fixed; bottom: 24px; right: 20px; z-index: 999;">
+  <!-- Toggle Button -->
+  <button 
+    id="aiToggleBtn" 
+    type="button" 
+    onclick="toggleAiWidget()"
+    style="background: var(--primary); color: #ffffff; border: none; border-radius: 50px; padding: 10px 18px; font-weight: 700; font-size: 0.9rem; box-shadow: var(--shadow-blue); cursor: pointer; display: flex; align-items: center; gap: 8px; transition: transform 0.2s ease;"
+  >
+    <span style="font-size: 1.2rem;">🤖</span>
+    <span>AI Hardware Assistant</span>
+  </button>
+
+  <!-- Expanded Chat Modal -->
+  <div 
+    id="aiChatBox" 
+    style="display: none; position: absolute; bottom: 60px; right: 0; width: 380px; max-width: calc(100vw - 32px); height: 500px; background: #ffffff; border-radius: var(--radius-card); box-shadow: var(--shadow-lg); border: 1px solid var(--border); flex-direction: column; overflow: hidden;"
+  >
+    <!-- Header -->
+    <div style="background: var(--primary); color: #ffffff; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.25rem;">🤖</span>
+        <div>
+          <div style="font-weight: 700; font-size: 0.95rem;">AI Hardware Assistant</div>
+          <div style="font-size: 0.75rem; opacity: 0.85;">Equipment guide & borrowing help</div>
+        </div>
+      </div>
+      <button 
+        type="button" 
+        onclick="toggleAiWidget()" 
+        style="background: rgba(255,255,255,0.2); border: none; color: #ffffff; font-size: 1.2rem; line-height: 1; border-radius: 50%; width: 28px; height: 28px; cursor: pointer;"
+      >
+        &times;
+      </button>
+    </div>
+
+    <!-- Messages Container -->
+    <div id="aiWidgetMessages" style="flex: 1; padding: 14px; overflow-y: auto; background: #f8fafc; display: flex; flex-direction: column; gap: 10px; font-size: 0.88rem;">
+      <div id="initialWidgetBubble" style="align-self: flex-start; background: #ffffff; border: 1px solid var(--border); padding: 10px 14px; border-radius: 14px; border-bottom-left-radius: 4px; max-width: 85%; color: var(--dark); box-shadow: var(--shadow-xs);">
+        <!-- Will be rendered via markdown -->
+      </div>
+    </div>
+
+    <!-- Quick Chips -->
+    <div id="aiWidgetChips" style="padding: 8px 12px; background: #f1f5f9; border-top: 1px solid var(--border); display: flex; gap: 6px; overflow-x: auto; white-space: nowrap;">
+      <span onclick="sendWidgetQuick('Find a Mini Drafter')" class="filter-chip" style="font-size: 0.75rem; padding: 3px 8px;">Mini Drafters</span>
+      <span onclick="sendWidgetQuick('Find a Digital Multimeter')" class="filter-chip" style="font-size: 0.75rem; padding: 3px 8px;">Multimeter</span>
+      <span onclick="sendWidgetQuick('Calculators for Exams')" class="filter-chip" style="font-size: 0.75rem; padding: 3px 8px;">Calculators</span>
+      <span onclick="sendWidgetQuick('How to borrow?')" class="filter-chip" style="font-size: 0.75rem; padding: 3px 8px;">How to borrow?</span>
+    </div>
+
+    <!-- Input Form -->
+    <form onsubmit="handleWidgetChat(event)" style="padding: 10px 12px; background: #ffffff; border-top: 1px solid var(--border); display: flex; gap: 8px;">
+      <input 
+        type="text" 
+        id="aiWidgetInput" 
+        placeholder="Type a question or equipment name..." 
+        class="form-control"
+        style="flex: 1; font-size: 0.88rem;"
+        autocomplete="off" 
+        required
+      >
+      <button 
+        type="submit" 
+        id="aiWidgetSendBtn" 
+        class="btn btn-primary btn-sm"
+      >
+        Send
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function renderWidgetMarkdown(md) {
+    if (!md) return '';
+    let html = md
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    html = html.replace(/^### (.*$)/gim, '<h4 class="chat-heading">$1</h4>');
+    html = html.replace(/^## (.*$)/gim, '<h3 class="chat-heading">$1</h3>');
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
+    html = html.replace(/`([^`]+)`/g, '<code class="chat-code">$1</code>');
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="chat-link" target="_self">$1</a>');
+    html = html.replace(/(?:^|\n)[•*-]\s+(.+)/g, '<div class="chat-list-item"><span class="bullet">•</span><span>$1</span></div>');
+    html = html.replace(/(?:^|\n)(\d+)\.\s+(.+)/g, '<div class="chat-list-item"><span class="num">$1.</span><span>$2</span></div>');
+    html = html.replace(/\n\n+/g, '<div class="chat-spacer"></div>');
+    html = html.replace(/\n/g, '<br>');
+    return html;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const initBubble = document.getElementById('initialWidgetBubble');
+    if (initBubble) {
+      initBubble.innerHTML = renderWidgetMarkdown(
+        "👋 **Hi! I am your Campus Equipment Advisor.**\n\n" +
+        "Ask me to find mini drafters, multimeters, or calculators, or ask about pickup spots and security deposits!"
+      );
+    }
+  });
+
+  function toggleAiWidget() {
+    const box = document.getElementById('aiChatBox');
+    const btn = document.getElementById('aiToggleBtn');
+    if (!box) return;
+    if (box.style.display === 'none' || box.style.display === '') {
+      box.style.display = 'flex';
+      btn.style.transform = 'scale(0.95)';
+      document.getElementById('aiWidgetInput')?.focus();
+    } else {
+      box.style.display = 'none';
+      btn.style.transform = 'scale(1)';
+    }
+  }
+
+  function appendWidgetMessage(sender, text) {
+    const container = document.getElementById('aiWidgetMessages');
+    if (!container) return;
+    const bubble = document.createElement('div');
+    bubble.style.maxWidth = '85%';
+    bubble.style.padding = '10px 14px';
+    bubble.style.borderRadius = '14px';
+    bubble.style.fontSize = '0.88rem';
+    bubble.style.lineHeight = '1.45';
+
+    if (sender === 'user') {
+      bubble.style.alignSelf = 'flex-end';
+      bubble.style.background = 'var(--primary)';
+      bubble.style.color = '#ffffff';
+      bubble.style.borderBottomRightRadius = '4px';
+      bubble.innerText = text;
+    } else {
+      bubble.style.alignSelf = 'flex-start';
+      bubble.style.background = '#ffffff';
+      bubble.style.border = '1px solid var(--border)';
+      bubble.style.color = 'var(--dark)';
+      bubble.style.borderBottomLeftRadius = '4px';
+      bubble.style.boxShadow = 'var(--shadow-xs)';
+      bubble.innerHTML = renderWidgetMarkdown(text);
+    }
+
+    container.appendChild(bubble);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function sendWidgetQuick(text) {
+    const input = document.getElementById('aiWidgetInput');
+    if (input) {
+      input.value = text;
+      handleWidgetChat(new Event('submit'));
+    }
+  }
+
+  async function handleWidgetChat(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const input = document.getElementById('aiWidgetInput');
+    const btn = document.getElementById('aiWidgetSendBtn');
+    const message = input.value.trim();
+    if (!message) return;
+
+    appendWidgetMessage('user', message);
+    input.value = '';
+    input.disabled = true;
+    btn.disabled = true;
+    btn.innerText = '...';
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+
+      if (data && data.reply) {
+        appendWidgetMessage('bot', data.reply);
+      } else {
+        appendWidgetMessage('bot', 'I could not answer right now. Please try again.');
+      }
+    } catch (err) {
+      console.error(err);
+      appendWidgetMessage('bot', 'Temporary connection issue. Please ask again.');
+    } finally {
+      input.disabled = false;
+      btn.disabled = false;
+      btn.innerText = 'Send';
+      input.focus();
+    }
+  }
+</script>

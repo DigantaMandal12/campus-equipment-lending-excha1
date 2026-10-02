@@ -1,0 +1,35 @@
+{
+  "name": "campus-equipment-lending-exchange",
+  "version": "1.0.0",
+  "description": "Smart Academic Equipment Lending Exchange & AI Advisor",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "build": "echo 'Build ready'",
+    "test": "node test_workflow.js",
+    "dev": "node server.js",
+    "migrate": "node scripts/migrate-mongodb-to-firebase.js"
+  },
+  "keywords": [
+    "education",
+    "ai",
+    "campus",
+    "equipment",
+    "lending",
+    "firebase"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "firebase-admin": "^12.0.0",
+    "method-override": "^3.0.0",
+    "nodemailer": "^6.9.13"
+  }
+}

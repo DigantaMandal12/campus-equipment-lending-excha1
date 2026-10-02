@@ -1,0 +1,126 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Campus Administrator Oversight</h1>
+    <p class="page-subtitle">Manage campus equipment inventory, monitor active borrowings, and review user roles</p>
+  </div>
+</div>
+
+<!-- Key Platform Statistics -->
+<div class="form-row" style="margin-bottom: 2rem;">
+  <div class="card" style="border-top: 4px solid var(--primary);">
+    <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">TOTAL USERS</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--dark); margin: 0.25rem 0;"><%= stats.totalUsers %></div>
+    <div style="font-size: 0.85rem; color: var(--text-muted);">Students & Faculty</div>
+  </div>
+
+  <div class="card" style="border-top: 4px solid var(--secondary);">
+    <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">LISTED EQUIPMENT</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--dark); margin: 0.25rem 0;"><%= stats.totalEquipment %></div>
+    <div style="font-size: 0.85rem; color: var(--text-muted);">Active in catalog</div>
+  </div>
+
+  <div class="card" style="border-top: 4px solid var(--warning);">
+    <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">ACTIVE LOANS</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--warning); margin: 0.25rem 0;"><%= stats.activeLoans %></div>
+    <div style="font-size: 0.85rem; color: var(--text-muted);">Currently borrowed</div>
+  </div>
+
+  <div class="card" style="border-top: 4px solid var(--success);">
+    <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">COMPLETED LOANS</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--success); margin: 0.25rem 0;"><%= stats.totalCompleted %></div>
+    <div style="font-size: 0.85rem; color: var(--text-muted);">Safely returned</div>
+  </div>
+</div>
+
+<!-- User Management -->
+<div class="card" style="margin-bottom: 2rem;">
+  <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--dark); margin-bottom: 1rem;">
+    User Account Management
+  </h2>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Department</th>
+          <th>Current Role</th>
+          <th>Change Role</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(function(u) { %>
+          <tr>
+            <td><strong><%= u.name %></strong></td>
+            <td><%= u.email %></td>
+            <td><%= u.department %></td>
+            <td>
+              <span class="role-badge role-<%= u.role %>"><%= u.role %></span>
+            </td>
+            <td>
+              <form action="/admin/user-role" method="POST" style="display: flex; gap: 0.4rem; margin: 0;">
+                <input type="hidden" name="userId" value="<%= u._id %>">
+                <select name="role" class="form-select" style="font-size: 0.82rem; padding: 0.25rem 0.5rem; max-width: 120px;">
+                  <option value="student" <%= u.role === 'student' ? 'selected' : '' %>>Student</option>
+                  <option value="teacher" <%= u.role === 'teacher' ? 'selected' : '' %>>Teacher</option>
+                  <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>Admin</option>
+                </select>
+                <button type="submit" class="btn btn-secondary btn-sm" data-loading-text="Saving...">Update</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- All Equipment Oversight -->
+<div class="card">
+  <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--dark); margin-bottom: 1rem;">
+    Equipment Catalog Oversight
+  </h2>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Category</th>
+          <th>Owner</th>
+          <th>Status</th>
+          <th>Deposit</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% allEquipment.forEach(function(eq) { %>
+          <tr>
+            <td>
+              <strong><a href="/equipment/<%= eq._id %>"><%= eq.title %></a></strong>
+            </td>
+            <td><%= eq.category %></td>
+            <td><%= eq.owner ? eq.owner.name : 'Unknown' %></td>
+            <td>
+              <span class="status-badge <%= eq.status === 'AVAILABLE' ? 'status-available' : 'status-borrowed' %>">
+                <%= eq.status %>
+              </span>
+            </td>
+            <td><%= eq.depositAmount > 0 ? '₹' + eq.depositAmount : 'None' %></td>
+            <td>
+              <div style="display: flex; gap: 0.4rem;">
+                <a href="/equipment/<%= eq._id %>/edit" class="btn btn-secondary btn-sm">Edit</a>
+                <form action="/equipment/<%= eq._id %>/delete" method="POST" style="margin: 0;">
+                  <button type="submit" class="btn btn-danger btn-sm" data-confirm="Delete this item from campus directory?" data-loading-text="Removing...">Remove</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
